@@ -3,58 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nostr Post Search Tool</title>
+<title>tweets recap</title>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <style>
-body { font-family: Arial, sans-serif; margin: 20px; background-color: #f7f7f7; color: #666; font-size: 1rem; }
-.container { max-width: 800px; margin: 0 auto; background-color: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
-h1, h2 { color: #666; }
-.input-group { margin-bottom: 15px; }
-.input-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-.input-group input[type="text"], .input-group input[type="date"], .input-group textarea { width: calc(100% - 22px); padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; box-sizing: border-box; color: #666; }
-textarea { resize: both; min-height: 100px; }
-button { padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 1rem; transition: background-color 0.3s ease, color 0.3s ease; margin-right: 10px; color: #ffb833; background-color: #FFE8B9;}
-button:hover { background-color: #ffcc66; }
-.button-group { margin-bottom: 15px; }
-#results { margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px; }
-.post { background-color: #fff; border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 6px; position: relative;}
-.post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 0.8em; color: #666; }
-.post-header a { color: #66b3ff; text-decoration: none; }
-.post-header a:hover { text-decoration: underline; color: #4da6ff; }
-.post-content { white-space: pre-wrap; word-wrap: break-word; margin-bottom: 10px; font-size: 1.1rem; }
-.post-actions { text-align: right; }
-.post-actions button { padding: 5px 10px; font-size: 0.8em; margin-left: 5px; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; padding: 0.5rem; line-height: 1.3; background-color: #f7f7f7; color: #666; font-size: 0.9rem; }
+.container { max-width: 600px; margin: 0rem auto 0rem 0.5rem; padding: 0.5rem; border-radius: 8px; background-color: #f7f7f7; }
+@media (max-width: 767px) { .container { max-width: 100%; padding: 0.5rem; margin: 0;}}
+h1 { font-size:1.1rem; color: #666; display: inline; }
+h2 { font-size:0.9rem; color: #666; display: inline; }
+.input-group { margin: 0.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;}
+input[type="text"], input[type="date"], textarea {padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; color: #666; }
+.container button { padding: 0.4rem 1rem; border: none; font-size: 0.8rem; border-radius: 0.4rem; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; margin: 0; font-weight: bold;}
+.container button:hover { background-color: #ffa347; }
+#results { margin: 0.5rem 0rem ; border-top: 1px solid #ddd; padding: 0.5rem; }
 #status { margin-top: 10px; font-weight: bold; color: #ff99cc; }
-.copy-button { display: none; }
-.copy-button:hover { background-color: #ff66b2; }
-.copy-all-button { margin-top: 10px; }
-#summarized-posts { font-size: 1rem; }
-#summary-section { margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; }
+#summary-section { margin:0.5rem 0rem ; padding: 0.5rem 0rem ; border-top: 1px solid #ddd; }
+.summary-header { display: flex; align-items: center; gap: 1rem; margin:0.5rem 0rem;}
+.summary-header h2 { margin: 0; }
+#summarized-posts { width: 100%; min-height: 3rem; font-size:0.8rem;resize: vertical;}
+.post-line { font-size: 0.9rem;  padding: 0.3rem 0;  border-top: 1px dashed #ddd;  border-bottom: 1px dashed #ddd;  background-color: inherit;}
+.post-time { color: #66b3ff; text-decoration: none; }
+.post-time:hover { text-decoration: underline; color: #4da6ff; }
 </style>
 </head>
 <body>
 <div id="header-placeholder"></div>
 <div class="container">
-<h1>Nostr Post Search Tool</h1>
-<p>npubまたはNIP-05アドレスと日付を入力して、Kind:1の投稿を検索します。</p>
+<div class="header-content" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;"><h1>tweets recap</h1><p>その日のkind:1を表示します</p></div>
 <div class="input-group">
-<label for="npub">npub / NIP-05:</label>
-<input type="text" id="npub" placeholder="npub1... または user@example.com">
-</div>
-<div class="input-group">
-<label for="date">日付:</label>
-<input type="date" id="date">
-</div>
-<button onclick="searchPosts()">検索</button>
+<label for="npub">pubkey</label><input type="text" id="npub" placeholder="npub1... or NIP-05" style="flex-grow: 1;">
+<label for="date">date</label><input type="date" id="date"><button onclick="searchPosts()">recap</button></div>
 <div id="summary-section">
-<h2>投稿のまとめ</h2>
-<div class="button-group">
-<button onclick="summarizePosts()" class="copy-all-button">まとめてコピー</button>
-</div>
-<textarea id="summarized-posts" readonly placeholder="ここに検索結果の投稿がまとめられます。"></textarea>
+ <div class="summary-header">
+ <h2>まとめ</h2>
+ <button onclick="summarizePosts()">まとめる</button>
+ <button onclick="copySummarizedPosts()">コピーする</button>
+ </div>
+ <textarea id="summarized-posts" readonly placeholder="ちゃぴに投げる用"></textarea>
 </div>
 <div id="results">
-<h2>結果</h2>
 <div id="post-list"></div>
 <p id="status"></p>
 </div>
@@ -223,7 +211,7 @@ const postElement = document.createElement('div');
 postElement.className = 'post';
 // 日時をフォーマット
 const postDate = new Date(post.created_at * 1000);
-const formattedDate = `${postDate.getFullYear()}/${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}:${postDate.getSeconds().toString().padStart(2, '0')}`;
+const formattedDate = `${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}`;
 // neventリンクを作成
 const eventPointer = {
 id: post.id,
@@ -235,52 +223,21 @@ const nevent = NostrTools.nip19.neventEncode(eventPointer);
 const njumpLink = `https://njump.me/${nevent}`;
 const counts = reactionCounts[post.id] || { reposts: 0, reactions: 0 };
 postElement.innerHTML = `
-<div class="post-header">
-<a href="${njumpLink}" target="_blank">${formattedDate}</a>
-<span>🔁${counts.reposts} ⭐${counts.reactions}</span>
-</div>
-<div class="post-content">${escapeHtml(post.content)}</div>
-<div class="post-actions">
-<button onclick="copyToClipboard('${escapeHtml(post.content)}')">投稿をコピー</button>
+<div class="post-line">
+  <a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
+  ${escapeHtml(post.content)}
+  ${counts.reposts > 0 || counts.reactions > 0 ? `⭐${counts.reactions} 🔁${counts.reposts} ` : ''}
 </div>
 `;
 postList.appendChild(postElement);
 });
-statusMessage.textContent = `検索完了。${posts.length}件の投稿が見つかりました。`;
+statusMessage.textContent = `この日の投稿数：${posts.length}ツイート`;
 };
 // HTMLエスケープ関数
 const escapeHtml = (text) => {
 const div = document.createElement('div');
 div.textContent = text;
 return div.innerHTML;
-};
-// クリップボードにコピーする関数
-const copyToClipboard = (text) => {
-navigator.clipboard.writeText(text).then(() => {
-alert('投稿内容をコピーしました！');
-}).catch(err => {
-console.error('コピーに失敗しました:', err);
-});
-};
-// 投稿をまとめてコピーする関数
-const summarizePosts = () => {
-const summarizedPostsArea = document.getElementById("summarized-posts");
-if (fetchedPosts.length === 0) {
-summarizedPostsArea.value = "まとめる投稿がありません。まず投稿を検索してください。";
-return;
-}
-const summary = fetchedPosts.map(post => {
-const postDate = new Date(post.created_at * 1000);
-const formattedDate = `${postDate.getFullYear()}/${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}:${postDate.getSeconds().toString().padStart(2, '0')}`;
-return `[${formattedDate}]\n${post.content}`;
-}).join('\n\n---\n\n'); // 各投稿を区切る
-summarizedPostsArea.value = summary;
-// コピー機能を追加
-navigator.clipboard.writeText(summary).then(() => {
-alert('すべての投稿をまとめてコピーしました！');
-}).catch(err => {
-console.error('まとめてコピーに失敗しました:', err);
-});
 };
 // ページ読み込み時に今日の日付を設定する
 document.addEventListener('DOMContentLoaded', () => {
@@ -291,6 +248,33 @@ const month = String(today.getMonth() + 1).padStart(2, '0'); // 月は0から始
 const day = String(today.getDate()).padStart(2, '0');
 dateInput.value = `${year}-${month}-${day}`;
 });
+// 投稿をまとめる関数（textareaに表示するだけ）
+const summarizePosts = () => {
+ const summarizedPostsArea = document.getElementById("summarized-posts");
+ if (fetchedPosts.length === 0) {
+ summarizedPostsArea.value = "先にツイートを表示してください。";
+ return;
+ }
+ const summary = fetchedPosts.map(post => {
+ const postDate = new Date(post.created_at * 1000);
+ const formattedDate = `${postDate.getFullYear()}/${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}:${postDate.getSeconds().toString().padStart(2, '0')}`;
+ return `[${formattedDate}]\n${post.content}`;
+ }).join('\n---\n');
+ summarizedPostsArea.value = summary;
+};
+// コピーする関数（textareaの内容をクリップボードに）
+const copySummarizedPosts = () => {
+ const text = document.getElementById("summarized-posts").value;
+ if (!text.trim()) {
+ alert("先にまとめてください。");
+ return;
+ }
+ navigator.clipboard.writeText(text).then(() => {
+ alert('まとめをコピーしました！');
+ }).catch(err => {
+ console.error('コピーに失敗しました:', err);
+ });
+};
 </script> 
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
