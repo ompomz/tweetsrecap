@@ -13,15 +13,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 h1 { font-size:1.1rem; color: #666; display: inline; }
 h2 { font-size:0.9rem; color: #666; display: inline; }
 .input-group { margin: 0.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;}
-input[type="text"], input[type="date"], textarea {padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; color: #666; }
-.container button { padding: 0.4rem 1rem; border: none; font-size: 0.8rem; border-radius: 0.8rem; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; margin: 0; font-weight: bold;}
+input[type="text"], input[type="date"], textarea {padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; color: #666; }
+.container button { margin: 0; border: none; font-size: 0.8rem; padding: 0.4rem 1rem; border-radius: 1.5rem; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; }
 .container button:hover { background-color: #ffa347; }
 #summary-section { border-top: 1px solid #ddd; display: flex; align-items: center; gap: 1rem; }
-.summary-header { display: flex; flex-direction: column; gap: 0.5rem; margin:0.5rem 0rem; justify-content: center; }
-.summary-header h2 { margin: 0; }
+.summary-header { display: flex; flex-direction: column; justify-content: center; gap: 0.5rem; margin:0.5rem 0rem; }
 #summarized-posts { flex-grow: 1; min-height: 3rem; font-size:0.8rem; resize: vertical;}
-#results { margin: 0.5rem 0rem ; padding: 0.5rem; }
-.post-line { font-size: 0.9rem;  padding: 0.5rem 0; border-bottom: 1px dashed #ddd; background-color: inherit;}
+#results { border-top: 1px solid #ddd; margin: 0.5rem 0rem ; padding: 0.5rem; }
+.post-line { font-size: 0.9rem; padding: 0.5rem 0; border-bottom: 1px dashed #ddd; word-wrap: break-word; overflow-wrap: break-word; }
 .post-time { color: #66b3ff; text-decoration: none; }
 .post-time:hover { text-decoration: underline; color: #4da6ff; }
 #status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; }
@@ -223,11 +222,14 @@ const nevent = NostrTools.nip19.neventEncode(eventPointer);
 const njumpLink = `https://njump.me/${nevent}`;
 const counts = reactionCounts[post.id] || { reposts: 0, reactions: 0 };
 postElement.innerHTML = `
-<div class="post-line">
-  <a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
-  ${escapeHtml(post.content)}
-  ${counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : ''}
+ <div class="post-line">
+ <a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
+ ${linkifyAndEscapeHtml(post.content)}
+ ${counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : ''}
 </div>
+`;
+postList.appendChild(postElement);
+});
 `;
 postList.appendChild(postElement);
 });
@@ -274,6 +276,21 @@ const copySummarizedPosts = () => {
  }).catch(err => {
  console.error('コピーに失敗しました:', err);
  });
+};
+/**
+ * テキスト内のURLをリンクに変換し、HTMLエスケープも行います。
+ * @param {string} text - 処理対象のテキスト
+ * @returns {string} リンク化されたHTML文字列
+ */
+const linkifyAndEscapeHtml = (text) => {
+  // まずHTMLエスケープ
+  const escapedText = escapeHtml(text);  
+  // httpまたはhttpsで始まるURLを検出する正規表現
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  // URLを<a>タグに置き換える
+  return escapedText.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank">${url}</a>`;
+  });
 };
 </script> 
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
