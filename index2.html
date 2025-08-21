@@ -8,21 +8,21 @@
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; padding: 0.5rem; line-height: 1.3; background-color: #f7f7f7; color: #666; font-size: 0.9rem; }
-.container { max-width: 600px; margin: 0rem auto 0rem 0.5rem; padding: 0.5rem; border-radius: 8px; background-color: #f7f7f7; }
+.container { max-width: 600px; margin: 0rem auto 0rem 0.5rem; padding: 0.5rem; border-radius: 0.8rem; background-color: #f7f7f7; }
 @media (max-width: 767px) { .container { max-width: 100%; padding: 0.5rem; margin: 0;}}
 h1 { font-size:1.1rem; color: #666; display: inline; }
 h2 { font-size:0.9rem; color: #666; display: inline; }
 .input-group { margin: 0.5rem 0; display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;}
 input[type="text"], input[type="date"], textarea {padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; color: #666; }
-.container button { padding: 0.4rem 1rem; border: none; font-size: 0.8rem; border-radius: 0.4rem; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; margin: 0; font-weight: bold;}
+.container button { padding: 0.4rem 1rem; border: none; font-size: 0.8rem; border-radius: 0.8rem; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; margin: 0; font-weight: bold;}
 .container button:hover { background-color: #ffa347; }
 #results { margin: 0.5rem 0rem ; border-top: 1px solid #ddd; padding: 0.5rem; }
 #status { margin-top: 10px; font-weight: bold; color: #ff99cc; }
-#summary-section { margin:0.5rem 0rem ; padding: 0.5rem 0rem ; border-top: 1px solid #ddd; }
-.summary-header { display: flex; align-items: center; gap: 1rem; margin:0.5rem 0rem;}
+#summary-section { border-top: 1px solid #ddd; display: flex; margin:0.5rem 0rem; align-items: center; gap: 1rem; }
+.summary-header { display: flex; flex-direction: column; gap: 0.5rem; margin:0.5rem 0rem; justify-content: center; }
 .summary-header h2 { margin: 0; }
-#summarized-posts { width: 100%; min-height: 3rem; font-size:0.8rem;resize: vertical;}
-.post-line { font-size: 0.9rem;  padding: 0.3rem 0;  border-top: 1px dashed #ddd;  border-bottom: 1px dashed #ddd;  background-color: inherit;}
+#summarized-posts { flex-grow: 1; min-height: 3rem; font-size:0.8rem; resize: vertical;}
+.post-line { font-size: 0.9rem;  padding: 0.5rem 0; border-bottom: 1px dashed #ddd; background-color: inherit;}
 .post-time { color: #66b3ff; text-decoration: none; }
 .post-time:hover { text-decoration: underline; color: #4da6ff; }
 </style>
@@ -32,11 +32,11 @@ input[type="text"], input[type="date"], textarea {padding: 0.5rem; border: 1px s
 <div class="container">
 <div class="header-content" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;"><h1>tweets recap</h1><p>その日のkind:1を表示します</p></div>
 <div class="input-group">
-<label for="npub">pubkey</label><input type="text" id="npub" placeholder="npub1... or NIP-05" style="flex-grow: 1;">
-<label for="date">date</label><input type="date" id="date"><button onclick="searchPosts()">recap</button></div>
+<label for="npub" style="display:none;">pubkey</label><input type="text" id="npub" placeholder="npub1... or NIP-05" style="flex-grow: 1;">
+<label for="date" style="display:none;">date</label><input type="date" id="date"><button onclick="searchPosts()">recap</button></div>
 <div id="summary-section">
  <div class="summary-header">
- <h2>まとめ</h2>
+ <h2 style="display:none;">まとめ</h2>
  <button onclick="summarizePosts()">まとめる</button>
  <button onclick="copySummarizedPosts()">コピーする</button>
  </div>
@@ -226,7 +226,7 @@ postElement.innerHTML = `
 <div class="post-line">
   <a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
   ${escapeHtml(post.content)}
-  ${counts.reposts > 0 || counts.reactions > 0 ? `⭐${counts.reactions} 🔁${counts.reposts} ` : ''}
+  ${counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : ''}
 </div>
 `;
 postList.appendChild(postElement);
@@ -252,7 +252,7 @@ dateInput.value = `${year}-${month}-${day}`;
 const summarizePosts = () => {
  const summarizedPostsArea = document.getElementById("summarized-posts");
  if (fetchedPosts.length === 0) {
- summarizedPostsArea.value = "先にツイートを表示してください。";
+ alert("先にツイートを表示してください。");
  return;
  }
  const summary = fetchedPosts.map(post => {
