@@ -12,14 +12,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 @media (max-width: 767px) { .container { max-width: 100%; padding: 0.5rem; margin: 0; } }
 h1 { font-size: 1.1rem; color: #666; display: inline; }
 h2 { font-size: 0.9rem; color: #666; display: inline; }
-.input-group { margin: 0.5rem 0; display: flex; gap: 0.5rem; flex-wrap: nowrap; align-items: center; }
+.input-group { margin: 0.5rem 0; display: flex; gap: 0.3rem; flex-wrap: nowrap; align-items: center; }
 input[type="text"], input[type="date"], textarea { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; color: #666; flex-shrink: 1; min-width: 0; }
 input[type="text"] { flex-grow: 1; }
 .container button { margin: 0; border: none; font-size: 0.8rem; padding: 0.5rem 0.8rem; border-radius: 999px; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; flex-shrink: 1; min-width: 0; }
 .container button:hover { background-color: #ffa347; }
-#summary-section { border-top: 1px solid #ddd; display: flex; align-items: center; gap: 1rem; }
-#summary-section button{font-size:0.7rem;padding:0.4rem 0.7rem;}
-.summary-header { display: flex; flex-direction: column; justify-content: center; gap: 0.5rem; margin: 0.5rem 0rem; }
+#summary-section { border-top: 1px solid #ddd; display: flex; align-items: center; gap: 0.5rem; }
+#summary-section button{font-size:0.7rem;padding:0.3rem 0.7rem;}
+.summary-header { display: flex; flex-direction: column; justify-content: center; gap: 0.25rem; margin: 0.5rem 0rem; }
 #summarized-posts { flex-grow: 1; min-height: 3rem; font-size: 0.8rem; resize: vertical; }
 #results { border-top: 1px solid #ddd; }
 .post-line { font-size: 0.9rem; padding: 0.5rem 0; border-bottom: 1px dashed #ddd; word-wrap: break-word; overflow-wrap: break-word; }
@@ -141,7 +141,7 @@ const reactionEvents = []; // Kind:6, Kind:7を格納
 // Kind:1の投稿を検索
 const sub1 = relay.sub([
 {
-kinds: [1],
+kinds: [1, 42],
 authors: [pubkey],
 since: sinceTime,
 until: untilTime,
