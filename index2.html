@@ -1,1 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tweets recap</title>
+<script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; padding: 0.5rem; line-height: 1.3; background-color: #f7f7f7; color: #666; font-size: 0.9rem; }
+.container { max-width: 600px; margin: 0rem auto 0rem 0.5rem; padding: 0.5rem; border-radius: 4px; background-color: #f7f7f7; }
+@media (max-width: 767px) { .container { max-width: 100%; padding: 0.5rem; margin: 0; } }
+h1 { font-size: 1.1rem; color: #666; display: inline; }
+h2 { font-size: 0.9rem; color: #666; display: inline; }
+.input-group { margin: 0.5rem 0; display: flex; gap: 0.3rem; flex-wrap: nowrap; align-items: center; }
+input[type="text"], input[type="date"], textarea { padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; color: #666; flex-shrink: 1; min-width: 0; }
+input[type="text"] { flex-grow: 1; }
+.container button { margin: 0; border: none; font-size: 0.8rem; padding: 0.5rem 0.8rem; border-radius: 999px; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; flex-shrink: 1; min-width: 0; }
+.container button:hover { background-color: #ffa347; }
+#summary-section { border-top: 1px solid #ddd; display: flex; align-items: center; gap: 0.5rem; }
+#summary-section button{font-size:0.7rem;padding:0.3rem 0.7rem;}
+.summary-header { display: flex; flex-direction: column; justify-content: center; gap: 0.25rem; margin: 0.5rem 0rem; }
+#summarized-posts { flex-grow: 1; min-height: 3rem; font-size: 0.8rem; resize: vertical; }
+#results { border-top: 1px solid #ddd; }
+.post-line { font-size: 0.9rem; padding: 0.5rem 0; border-bottom: 1px dashed #ddd; word-wrap: break-word; overflow-wrap: break-word; }
+.post-time { color: #66b3ff; text-decoration: none; }
+.post-time:hover { text-decoration: underline; color: #4da6ff; }
+#status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; }
+</style>
+</head>
+<body>
+<div id="header-placeholder"></div>
+<div class="container">
+<div class="header-content" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;"><h1>tweets recap</h1><p>その日のkind:1を表示します</p></div>
+<div class="input-group">
+<label for="npub" style="display:none;">pubkey</label><input type="text" id="npub" placeholder="npub1... or NIP-05" style="flex-grow: 1;">
+<label for="date" style="display:none;">date</label><input type="date" id="date"><button onclick="searchPosts()">recap</button><button onclick="createShareLink()">share</button> </div>
+<div id="summary-section">
+ <div class="summary-header">
+ <h2 style="display:none;">まとめ</h2>
+ <button onclick="summarizePosts()">まとめる</button>
+ <button onclick="copySummarizedPosts()">コピーする</button>
+ </div>
+ <textarea id="summarized-posts" readonly placeholder="ちゃぴに投げる用"></textarea>
+</div>
+<div id="results">
+<div id="post-list"></div>
+<p id="status"></p>
+</div>
+</div>
+<script>
+// NostrToolsはグローバル変数として提供される (バージョン1.17.0の挙動)
+const RELAY_URL = 'wss://relay.nostr.band';
+let fetchedPosts = []; // 検索結果の投稿を保持する配列
+/**
+* NIP-05アドレスを解決して公開鍵を取得します。
+* @param {string} nip05 - NIP-05アドレス (例: user@example.com)
+* @returns {Promise<string|null>} 公開鍵のHEX文字列、または解決できなかった場合はnull
+*/
+async function resolveNip05(nip05) {
+const parts = nip05.split('@');
+if (parts.length !== 2) return null;
+const [name, domain] = parts;
+try {
+const response = await fetch(`https://${domain}/.well-known/nostr.json?name=${name}`);
+const data = await response.json();
+return data.names[name] || null;
+} catch (e) {
+console.error(`NIP-05アドレスの解決に失敗しました: ${nip05}`, e);
+return null;
+}
+}
+/**
+* npub、HEX、またはNIP-05アドレスを公開鍵のHEX文字列に正規化します。
+* @param {string} input - npub、HEX、またはNIP-05アドレス
+* @returns {Promise<string|null>} 公開鍵のHEX文字列、または解決できなかった場合はnull
+*/
+async function normalizePubkey(input) {
+if (input.startsWith("npub1")) {
+try {
+// NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
+const { type, data } = NostrTools.nip19.decode(input); 
+if (type === 'npub') {
+return data;
+}
+} catch (e) {
+console.error("npubのデコードに失敗しました:", e);
+return null;
+}
+} else if (/^[a-f0-9]{64}$/i.test(input)) {
+return input;
+} else if (input.includes('@')) {
+return await resolveNip05(input);
+}
+return null;
+}
+// 投稿を検索し、表示するメイン関数
+const searchPosts = async () => {
+const npubInput = document.getElementById("npub").value.trim();
+const dateStr = document.getElementById("date").value;
+const postList = document.getElementById("post-list");
+const statusMessage = document.getElementById("status");
+const summarizedPostsArea = document.getElementById("summarized-posts");
+postList.innerHTML = '';
+statusMessage.textContent = '';
+summarizedPostsArea.value = ''; // 検索開始時にまとめエリアをクリア
+fetchedPosts = []; // 検索開始時に投稿配列をクリア
+if (!npubInput || !dateStr) {
+statusMessage.textContent = 'npubまたはNIP-05アドレスと日付の両方を入力してください。';
+return;
+}
+statusMessage.textContent = '検索中...';
+let pubkey;
+try {
+// npubInputを公開鍵（HEX）に正規化
+pubkey = await normalizePubkey(npubInput);
+if (!pubkey) {
+throw new Error('無効なnpub、NIP-05アドレス、または公開鍵形式です。');
+}
+} catch (e) {
+statusMessage.textContent = e.message;
+return;
+}
+// 指定日の00:00:00と23:59:59のUNIXタイムスタンプを計算
+const date = new Date(dateStr);
+if (isNaN(date.getTime())) {
+statusMessage.textContent = '無効な日付形式です。';
+return;
+}
+const sinceTime = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
+const untilTime = Math.floor(date.setHours(23, 59, 59, 999) / 1000);
+try {
+// NostrTools.relayInit を使用 (バージョン1.17.0の挙動)
+const relay = NostrTools.relayInit(RELAY_URL); 
+relay.on('error', () => {
+statusMessage.textContent = 'リレーへの接続に失敗しました。';
+});
+await relay.connect();
+const kinds1Events = []; // Kind:1の投稿を格納
+const reactionEvents = []; // Kind:6, Kind:7を格納
+// Kind:1の投稿を検索
+const sub1 = relay.sub([
+{
+kinds: [1, 42],
+authors: [pubkey],
+since: sinceTime,
+until: untilTime,
+}
+]);
+sub1.on('event', (event) => {
+kinds1Events.push(event);
+});
+// Kind:6とKind:7のリアクションイベントを検索
+// njump.meのneventリンクを作成するために、関連するイベントIDを収集
+let eventIds = new Set();
+sub1.on('eose', () => {
+kinds1Events.forEach(e => eventIds.add(e.id));
+if (eventIds.size > 0) {
+const sub2 = relay.sub([
+{
+kinds: [6, 7],
+'#e': Array.from(eventIds),
+since: sinceTime,
+until: untilTime,
+}
+]);
+sub2.on('event', (event) => {
+reactionEvents.push(event);
+});
+sub2.on('eose', () => {
+displayResults(kinds1Events, reactionEvents);
+relay.close();
+});
+} else {
+displayResults([], []);
+relay.close();
+}
+});
+} catch (e) {
+statusMessage.textContent = `エラーが発生しました: ${e.message}`;
+}
+};
+// 検索結果を表示する関数
+const displayResults = (posts, reactions) => {
+const postList = document.getElementById("post-list");
+const statusMessage = document.getElementById("status");
+fetchedPosts = posts; // 検索結果をグローバル変数に保存
+if (posts.length === 0) {
+statusMessage.textContent = '指定された日付の投稿は見つかりませんでした。';
+return;
+}
+// 投稿日時が古い順（昇順）にソート
+posts.sort((a, b) => a.created_at - b.created_at);
+// リアクション数を集計
+const reactionCounts = {};
+reactions.forEach(reaction => {
+const targetEventId = reaction.tags.find(tag => tag[0] === 'e')?.[1];
+if (targetEventId) {
+if (!reactionCounts[targetEventId]) {
+reactionCounts[targetEventId] = { reposts: 0, reactions: 0 };
+}
+if (reaction.kind === 6) {
+reactionCounts[targetEventId].reposts++;
+} else if (reaction.kind === 7) {
+reactionCounts[targetEventId].reactions++;
+}
+}
+});
+// 結果をHTMLにレンダリング
+posts.forEach(post => {
+const postElement = document.createElement('div');
+postElement.className = 'post';
+// 日時をフォーマット
+const postDate = new Date(post.created_at * 1000);
+const formattedDate = `${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}`;
+// neventリンクを作成
+const eventPointer = {
+id: post.id,
+relays: [RELAY_URL], // 検索に使用したリレーを含める
+author: post.pubkey, // 著者の公開鍵を含める
+};
+// NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
+const nevent = NostrTools.nip19.neventEncode(eventPointer); 
+const njumpLink = `https://njump.me/${nevent}`;
+const counts = reactionCounts[post.id] || { reposts: 0, reactions: 0 };
+postElement.innerHTML = `
+ <div class="post-line">
+ <a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
+ ${linkifyAndEscapeHtml(post.content)}
+ ${counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : ''}
+</div>
+`;
+postList.appendChild(postElement);
+});
+statusMessage.textContent = `この日の投稿数：${posts.length}ツイート`;
+};
+// HTMLエスケープ関数
+const escapeHtml = (text) => {
+const div = document.createElement('div');
+div.textContent = text;
+return div.innerHTML;
+};
+// ページ読み込み時に今日の日付を設定する
+document.addEventListener('DOMContentLoaded', () => {
+const dateInput = document.getElementById('date');
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, '0'); // 月は0から始まるため+1
+const day = String(today.getDate()).padStart(2, '0');
+dateInput.value = `${year}-${month}-${day}`;
+});
+// URLパラメータからnpubとdateを取得し、検索を実行する
+document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const npubFromUrl = urlParams.get('npub');
+    const dateFromUrl = urlParams.get('date');
 
+    if (npubFromUrl && dateFromUrl) {
+        document.getElementById("npub").value = npubFromUrl;
+        document.getElementById("date").value = dateFromUrl;
+        searchPosts();
+    }
+});
+// シェアリンクを作成するボタンと関数を追加
+const createShareLink = () => {
+    const npub = document.getElementById("npub").value;
+    const date = document.getElementById("date").value;
+
+    if (!npub || !date) {
+        alert("先にnpubと日付を入力してください。");
+        return;
+    }    
+    const shareUrl = `${window.location.origin}${window.location.pathname}?npub=${encodeURIComponent(npub)}&date=${encodeURIComponent(date)}`;    
+    // クリップボードにコピー
+    navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('シェアリンクをコピーしました！');
+    }).catch(err => {
+        console.error('コピーに失敗しました:', err);
+    });
+};
+// 投稿をまとめる関数（textareaに表示するだけ）
+const summarizePosts = () => {
+ const summarizedPostsArea = document.getElementById("summarized-posts");
+ if (fetchedPosts.length === 0) {
+ alert("先にツイートを表示してください。");
+ return;
+ }
+ const summary = fetchedPosts.map(post => {
+ const postDate = new Date(post.created_at * 1000);
+ const formattedDate = `${postDate.getFullYear()}/${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}:${postDate.getSeconds().toString().padStart(2, '0')}`;
+ return `[${formattedDate}]\n${post.content}`;
+ }).join('\n---\n');
+ summarizedPostsArea.value = summary;
+};
+// コピーする関数（textareaの内容をクリップボードに）
+const copySummarizedPosts = () => {
+ const text = document.getElementById("summarized-posts").value;
+ if (!text.trim()) {
+ alert("先にまとめてください。");
+ return;
+ }
+ navigator.clipboard.writeText(text).then(() => {
+ alert('まとめをコピーしました！');
+ }).catch(err => {
+ console.error('コピーに失敗しました:', err);
+ });
+};
+/**
+ * テキスト内のURLをリンクに変換し、HTMLエスケープも行います。
+ * @param {string} text - 処理対象のテキスト
+ * @returns {string} リンク化されたHTML文字列
+ */
+const linkifyAndEscapeHtml = (text) => {
+  // まずHTMLエスケープ
+  const escapedText = escapeHtml(text);  
+  // httpまたはhttpsで始まるURLを検出する正規表現
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  // URLを<a>タグに置き換える
+  return escapedText.replace(urlRegex, (url) => {
+    return `<a href="${url}" target="_blank">${url}</a>`;
+  });
+};
+</script> 
+<script src="https://ompomz.github.io/header/loadHeader.js"></script>
+</body>
+</html>
