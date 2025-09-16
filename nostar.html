@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>tweets recap</title>
-<script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
+<title>tweets recap -no star-</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; padding: 0.5rem; line-height: 1.3; background-color: #f7f7f7; color: #666; font-size: 0.9rem; }
@@ -31,7 +30,7 @@ input[type="text"] { flex-grow: 1; }
 <body>
 <div id="header-placeholder"></div>
 <div class="container">
-<div class="header-content" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;"><h1>tweets recap</h1><p>その日のkind:1を表示します</p></div>
+<div class="header-content" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;"><h1>tweets recap -no star-</h1><p>その日のkind:1を表示します</p></div>
 <div class="input-group">
 <label for="npub" style="display:none;">pubkey</label><input type="text" id="npub" placeholder="npub1... or NIP-05" style="flex-grow: 1;">
 <label for="date" style="display:none;">date</label><input type="date" id="date"><button onclick="searchPosts()">recap</button><button onclick="createShareLink()">share</button> </div>
@@ -48,6 +47,7 @@ input[type="text"] { flex-grow: 1; }
 <p id="status"></p>
 </div>
 </div>
+<script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script>
 // NostrToolsはグローバル変数として提供される (バージョン1.17.0の挙動)
 const RELAY_URL = 'wss://relay.nostr.band';
@@ -79,7 +79,7 @@ async function normalizePubkey(input) {
 if (input.startsWith("npub1")) {
 try {
 // NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
-const { type, data } = NostrTools.nip19.decode(input); 
+const { type, data } = NostrTools.nip19.decode(input);
 if (type === 'npub') {
 return data;
 }
@@ -131,14 +131,16 @@ const sinceTime = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
 const untilTime = Math.floor(date.setHours(23, 59, 59, 999) / 1000);
 try {
 // NostrTools.relayInit を使用 (バージョン1.17.0の挙動)
-const relay = NostrTools.relayInit(RELAY_URL); 
+console.log(`[Log] リレー ${RELAY_URL} への接続を開始...`);
+const relay = NostrTools.relayInit(RELAY_URL);
 relay.on('error', () => {
-statusMessage.textContent = 'リレーへの接続に失敗しました。';
+statusMessage.textContent = `リレー ${RELAY_URL} への接続に失敗しました。`;
+console.error(`[Error] リレー ${RELAY_URL} への接続に失敗しました。`);
 });
 await relay.connect();
-const kinds1Events = []; // Kind:1の投稿を格納
-const reactionEvents = []; // Kind:6, Kind:7を格納
-// Kind:1の投稿を検索
+console.log(`[Log] リレー ${RELAY_URL} に接続しました。`);
+const kinds1Events = []; // Kind:1,42の投稿を格納
+// Kind:1とKind:42の投稿を検索
 const sub1 = relay.sub([
 {
 kinds: [1, 42],
@@ -150,38 +152,17 @@ until: untilTime,
 sub1.on('event', (event) => {
 kinds1Events.push(event);
 });
-// Kind:6とKind:7のリアクションイベントを検索
-// njump.meのneventリンクを作成するために、関連するイベントIDを収集
-let eventIds = new Set();
 sub1.on('eose', () => {
-kinds1Events.forEach(e => eventIds.add(e.id));
-if (eventIds.size > 0) {
-const sub2 = relay.sub([
-{
-kinds: [6, 7],
-'#e': Array.from(eventIds),
-since: sinceTime,
-until: untilTime,
-}
-]);
-sub2.on('event', (event) => {
-reactionEvents.push(event);
-});
-sub2.on('eose', () => {
-displayResults(kinds1Events, reactionEvents);
+console.log(`[Log] リレー ${RELAY_URL} の購読が終了しました。`);
+displayResults(kinds1Events);
 relay.close();
-});
-} else {
-displayResults([], []);
-relay.close();
-}
 });
 } catch (e) {
 statusMessage.textContent = `エラーが発生しました: ${e.message}`;
 }
 };
 // 検索結果を表示する関数
-const displayResults = (posts, reactions) => {
+const displayResults = (posts) => {
 const postList = document.getElementById("post-list");
 const statusMessage = document.getElementById("status");
 fetchedPosts = posts; // 検索結果をグローバル変数に保存
@@ -191,21 +172,6 @@ return;
 }
 // 投稿日時が古い順（昇順）にソート
 posts.sort((a, b) => a.created_at - b.created_at);
-// リアクション数を集計
-const reactionCounts = {};
-reactions.forEach(reaction => {
-const targetEventId = reaction.tags.find(tag => tag[0] === 'e')?.[1];
-if (targetEventId) {
-if (!reactionCounts[targetEventId]) {
-reactionCounts[targetEventId] = { reposts: 0, reactions: 0 };
-}
-if (reaction.kind === 6) {
-reactionCounts[targetEventId].reposts++;
-} else if (reaction.kind === 7) {
-reactionCounts[targetEventId].reactions++;
-}
-}
-});
 // 結果をHTMLにレンダリング
 posts.forEach(post => {
 const postElement = document.createElement('div');
@@ -220,14 +186,12 @@ relays: [RELAY_URL], // 検索に使用したリレーを含める
 author: post.pubkey, // 著者の公開鍵を含める
 };
 // NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
-const nevent = NostrTools.nip19.neventEncode(eventPointer); 
+const nevent = NostrTools.nip19.neventEncode(eventPointer);
 const njumpLink = `https://njump.me/${nevent}`;
-const counts = reactionCounts[post.id] || { reposts: 0, reactions: 0 };
 postElement.innerHTML = `
- <div class="post-line">
- <a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
- ${linkifyAndEscapeHtml(post.content)}
- ${counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : ''}
+<div class="post-line">
+<a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
+${linkifyAndEscapeHtml(post.content)}
 </div>
 `;
 postList.appendChild(postElement);
@@ -251,76 +215,74 @@ dateInput.value = `${year}-${month}-${day}`;
 });
 // URLパラメータからnpubとdateを取得し、検索を実行する
 document.addEventListener('DOMContentLoaded', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const npubFromUrl = urlParams.get('npub');
-    const dateFromUrl = urlParams.get('date');
-
-    if (npubFromUrl && dateFromUrl) {
-        document.getElementById("npub").value = npubFromUrl;
-        document.getElementById("date").value = dateFromUrl;
-        searchPosts();
-    }
+const urlParams = new URLSearchParams(window.location.search);
+const npubFromUrl = urlParams.get('npub');
+const dateFromUrl = urlParams.get('date');
+if (npubFromUrl && dateFromUrl) {
+document.getElementById("npub").value = npubFromUrl;
+document.getElementById("date").value = dateFromUrl;
+searchPosts();
+}
 });
 // シェアリンクを作成するボタンと関数を追加
 const createShareLink = () => {
-    const npub = document.getElementById("npub").value;
-    const date = document.getElementById("date").value;
-
-    if (!npub || !date) {
-        alert("先にnpubと日付を入力してください。");
-        return;
-    }    
-    const shareUrl = `${window.location.origin}${window.location.pathname}?npub=${encodeURIComponent(npub)}&date=${encodeURIComponent(date)}`;    
-    // クリップボードにコピー
-    navigator.clipboard.writeText(shareUrl).then(() => {
-        alert('シェアリンクをコピーしました！');
-    }).catch(err => {
-        console.error('コピーに失敗しました:', err);
-    });
+const npub = document.getElementById("npub").value;
+const date = document.getElementById("date").value;
+if (!npub || !date) {
+alert("先にnpubと日付を入力してください。");
+return;
+}
+const shareUrl = `${window.location.origin}${window.location.pathname}?npub=${encodeURIComponent(npub)}&date=${encodeURIComponent(date)}`;
+// クリップボードにコピー
+navigator.clipboard.writeText(shareUrl).then(() => {
+alert('シェアリンクをコピーしました！');
+}).catch(err => {
+console.error('コピーに失敗しました:', err);
+});
 };
 // 投稿をまとめる関数（textareaに表示するだけ）
 const summarizePosts = () => {
- const summarizedPostsArea = document.getElementById("summarized-posts");
- if (fetchedPosts.length === 0) {
- alert("先にツイートを表示してください。");
- return;
- }
- const summary = fetchedPosts.map(post => {
- const postDate = new Date(post.created_at * 1000);
- const formattedDate = `${postDate.getFullYear()}/${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}:${postDate.getSeconds().toString().padStart(2, '0')}`;
- return `[${formattedDate}]\n${post.content}`;
- }).join('\n---\n');
- summarizedPostsArea.value = summary;
+const summarizedPostsArea = document.getElementById("summarized-posts");
+if (fetchedPosts.length === 0) {
+alert("先にツイートを表示してください。");
+return;
+}
+const summary = fetchedPosts.map(post => {
+const postDate = new Date(post.created_at * 1000);
+const formattedDate = `${postDate.getFullYear()}/${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}:${postDate.getSeconds().toString().padStart(2, '0')}`;
+return `[${formattedDate}]\n${post.content}`;
+}).join('\n---\n');
+summarizedPostsArea.value = summary;
 };
 // コピーする関数（textareaの内容をクリップボードに）
 const copySummarizedPosts = () => {
- const text = document.getElementById("summarized-posts").value;
- if (!text.trim()) {
- alert("先にまとめてください。");
- return;
- }
- navigator.clipboard.writeText(text).then(() => {
- alert('まとめをコピーしました！');
- }).catch(err => {
- console.error('コピーに失敗しました:', err);
- });
+const text = document.getElementById("summarized-posts").value;
+if (!text.trim()) {
+alert("先にまとめてください。");
+return;
+}
+navigator.clipboard.writeText(text).then(() => {
+alert('まとめをコピーしました！');
+}).catch(err => {
+console.error('コピーに失敗しました:', err);
+});
 };
 /**
- * テキスト内のURLをリンクに変換し、HTMLエスケープも行います。
- * @param {string} text - 処理対象のテキスト
- * @returns {string} リンク化されたHTML文字列
- */
+* テキスト内のURLをリンクに変換し、HTMLエスケープも行います。
+* @param {string} text - 処理対象のテキスト
+* @returns {string} リンク化されたHTML文字列
+*/
 const linkifyAndEscapeHtml = (text) => {
-  // まずHTMLエスケープ
-  const escapedText = escapeHtml(text);  
-  // httpまたはhttpsで始まるURLを検出する正規表現
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  // URLを<a>タグに置き換える
-  return escapedText.replace(urlRegex, (url) => {
-    return `<a href="${url}" target="_blank">${url}</a>`;
-  });
+// まずHTMLエスケープ
+const escapedText = escapeHtml(text);
+// httpまたはhttpsで始まるURLを検出する正規表現
+const urlRegex = /(https?:\/\/[^\s]+)/g;
+// URLを<a>タグに置き換える
+return escapedText.replace(urlRegex, (url) => {
+return `<a href="${url}" target="_blank">${url}</a>`;
+});
 };
-</script> 
+</script>
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
 </html>
