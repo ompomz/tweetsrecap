@@ -50,7 +50,26 @@ input[type="text"] { flex-grow: 1; }
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script>
 // NostrToolsはグローバル変数として提供される (バージョン1.17.0の挙動)
-const RELAY_URL = 'wss://relay.nostr.band';
+let RELAY_URL = 'wss://relay.nostr.band';
+async function checkRelay(url) {
+  try {
+    const relay = NostrTools.relayInit(url);
+    await relay.connect();
+    relay.close();
+    return true;
+  } catch (e) {
+    console.warn(`[Relay Check] ${url} に接続できませんでした。`, e);
+    return false;
+  }
+}
+// 最初に接続確認して、使えるリレーを選ぶ
+(async () => {
+  const isMainAlive = await checkRelay(RELAY_URL);
+  if (!isMainAlive) {
+    console.warn(`[Relay Fallback] nostr.band が死んでるので nos.lol に切り替えます。`);
+    RELAY_URL = 'wss://nos.lol';
+  }
+})();
 let fetchedPosts = []; // 検索結果の投稿を保持する配列
 const reactionCache = new Map(); // 反応イベントをキャッシュするMap
 const postElements = new Map(); // 投稿のDOM要素をキャッシュするMap
