@@ -167,13 +167,13 @@ author: post.pubkey, // 著者の公開鍵を含める
 };
 // NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
 const nevent = NostrTools.nip19.neventEncode(eventPointer);
-const njumpLink = `https://njump.me/${nevent}`;
+const customViewerUrl = `/tweetsrecap/tweet?nevent=${nevent}`;
 postElement.innerHTML = `
-<div class="post-line">
-<a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
-${linkifyAndEscapeHtml(post.content)}
-<span class="reaction-counts"></span>
-</div>
+  <div class="post-line">
+    <a href="${customViewerUrl}" target="_blank" class="post-time">[${formattedDate}]</a>
+    ${linkifyAndEscapeHtml(post.content)}
+    <span class="reaction-counts"></span>
+  </div>
 `;
 postList.appendChild(postElement);
 postElements.set(post.id, postElement);
@@ -186,7 +186,9 @@ const postElement = postElements.get(post.id);
 if (postElement) {
 const reactionSpan = postElement.querySelector('.reaction-counts');
 if (reactionSpan) {
-reactionSpan.innerHTML = counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : '';
+reactionSpan.innerHTML = (counts.reactions > 0 || counts.reposts > 0)
+  ? ` ${counts.reactions > 0 ? ` ⭐${counts.reactions}` : ''}${counts.reposts > 0 ? ` 🔁${counts.reposts} ` : ''} `
+  : '';
 }
 }
 });
