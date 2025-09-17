@@ -52,6 +52,9 @@ input[type="text"] { flex-grow: 1; }
 // NostrToolsはグローバル変数として提供される (バージョン1.17.0の挙動)
 const RELAY_URL = 'wss://relay.nostr.band';
 let fetchedPosts = []; // 検索結果の投稿を保持する配列
+const reactionCache = new Map(); // 反応イベントをキャッシュするMap
+const postElements = new Map(); // 投稿のDOM要素をキャッシュするMap
+const reactionUpdateInterval = 5000; // リアクションの差分更新を5秒ごとに行う
 /**
 * NIP-05アドレスを解決して公開鍵を取得します。
 * @param {string} nip05 - NIP-05アドレス (例: user@example.com)
@@ -94,22 +97,99 @@ return await resolveNip05(input);
 }
 return null;
 }
+/**
+* 投稿とリアクションをレンダリングします。
+* 投稿は初回描画、リアクションは差分更新を行います。
+* @param {Array<Object>} posts - 投稿イベントの配列
+* @param {Array<Object>} reactions - リアクションイベントの配列
+* @param {boolean} isInitialDraw - 初回描画かどうか
+*/
+const renderPostsAndReactions = (posts, reactions, isInitialDraw) => {
+const postList = document.getElementById("post-list");
+const statusMessage = document.getElementById("status");
+// リアクション数を集計
+const reactionCounts = {};
+reactions.forEach(reaction => {
+const targetEventId = reaction.tags.find(tag => tag[0] === 'e')?.[1];
+if (targetEventId) {
+if (!reactionCounts[targetEventId]) {
+reactionCounts[targetEventId] = { reposts: 0, reactions: 0 };
+}
+if (reaction.kind === 6) {
+reactionCounts[targetEventId].reposts++;
+} else if (reaction.kind === 7) {
+reactionCounts[targetEventId].reactions++;
+}
+}
+});
+if (isInitialDraw) {
+fetchedPosts = posts; // 検索結果をグローバル変数に保存
+postList.innerHTML = '';
+postElements.clear(); // キャッシュをクリア
+if (posts.length === 0) {
+statusMessage.textContent = '指定された日付の投稿は見つかりませんでした。';
+return;
+}
+// 投稿日時が古い順（昇順）にソート
+posts.sort((a, b) => a.created_at - b.created_at);
+console.log(`[Rendering] 投稿 ${posts.length} 件を初回描画します。`);
+posts.forEach(post => {
+const postElement = document.createElement('div');
+postElement.className = 'post';
+postElement.dataset.eventId = post.id;
+// 日時をフォーマット
+const postDate = new Date(post.created_at * 1000);
+const formattedDate = `${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}`;
+// neventリンクを作成
+const eventPointer = {
+id: post.id,
+relays: [RELAY_URL], // 検索に使用したリレーを含める
+author: post.pubkey, // 著者の公開鍵を含める
+};
+// NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
+const nevent = NostrTools.nip19.neventEncode(eventPointer);
+const njumpLink = `https://njump.me/${nevent}`;
+postElement.innerHTML = `
+<div class="post-line">
+<a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
+${linkifyAndEscapeHtml(post.content)}
+<span class="reaction-counts"></span>
+</div>
+`;
+postList.appendChild(postElement);
+postElements.set(post.id, postElement);
+});
+}
+// リアクションを差分更新
+posts.forEach(post => {
+const counts = reactionCounts[post.id] || { reposts: 0, reactions: 0 };
+const postElement = postElements.get(post.id);
+if (postElement) {
+const reactionSpan = postElement.querySelector('.reaction-counts');
+if (reactionSpan) {
+reactionSpan.innerHTML = counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : '';
+}
+}
+});
+statusMessage.textContent = `この日の投稿数：${posts.length}ツイート`;
+};
 // 投稿を検索し、表示するメイン関数
 const searchPosts = async () => {
 const npubInput = document.getElementById("npub").value.trim();
 const dateStr = document.getElementById("date").value;
-const postList = document.getElementById("post-list");
 const statusMessage = document.getElementById("status");
 const summarizedPostsArea = document.getElementById("summarized-posts");
-postList.innerHTML = '';
-statusMessage.textContent = '';
-summarizedPostsArea.value = ''; // 検索開始時にまとめエリアをクリア
-fetchedPosts = []; // 検索開始時に投稿配列をクリア
+// 検索開始時の初期化
+document.getElementById("post-list").innerHTML = '';
+statusMessage.textContent = '検索中...';
+summarizedPostsArea.value = '';
+fetchedPosts = [];
+reactionCache.clear();
+postElements.clear();
 if (!npubInput || !dateStr) {
 statusMessage.textContent = 'npubまたはNIP-05アドレスと日付の両方を入力してください。';
 return;
 }
-statusMessage.textContent = '検索中...';
 let pubkey;
 try {
 // npubInputを公開鍵（HEX）に正規化
@@ -129,32 +209,35 @@ return;
 }
 const sinceTime = Math.floor(date.setHours(0, 0, 0, 0) / 1000);
 const untilTime = Math.floor(date.setHours(23, 59, 59, 999) / 1000);
+// Kind:1とKind:42の投稿を最初に取得して描画
+console.log(`[Step 1] メインリレーから kind:1, 42 のイベントを検索します...`);
 try {
-const relayUrlsToSearch = new Set();
-relayUrlsToSearch.add(RELAY_URL);
-// Kind:10002 (リレーリスト) を取得し、検索対象リレーに追加
-console.log(`[Step 1] Kind:10002イベントからフォローしているリレーリストを取得します...`);
-const mainRelay = NostrTools.relayInit(RELAY_URL);
-await mainRelay.connect();
-const sub10002 = mainRelay.sub([{ kinds: [10002], authors: [pubkey] }]);
-sub10002.on('event', (event) => {
-event.tags.forEach(tag => {
-if (tag[0] === 'r' && tag[1].startsWith('wss://')) {
-relayUrlsToSearch.add(tag[1]);
+const kinds1And42Events = await fetchPosts(RELAY_URL, pubkey, sinceTime, untilTime);
+const eventIds = kinds1And42Events.map(e => e.id);
+renderPostsAndReactions(kinds1And42Events, [], true); // 初回描画
+if (eventIds.length > 0) {
+// Kind:10002とKind:6,7を裏で取得開始
+fetchReactionsInBackground(pubkey, eventIds, sinceTime, untilTime);
 }
-});
-});
-await new Promise(resolve => sub10002.on('eose', () => {
-mainRelay.close();
-console.log(`[Step 1] Kind:10002イベントの購読が完了しました。検索対象リレーは以下の通りです:`, Array.from(relayUrlsToSearch));
-resolve();
-}));
-// Kind:1とKind:42の投稿を検索
-console.log(`[Step 2] メインリレーから kind:1, 42 のイベントを検索します...`);
-const kinds1And42Events = [];
-const postRelay = NostrTools.relayInit(RELAY_URL);
-await postRelay.connect();
-const sub1 = postRelay.sub([
+} catch (e) {
+statusMessage.textContent = `エラーが発生しました: ${e.message}`;
+console.error('[Fatal Error]', e);
+}
+};
+/**
+* Kind:1, 42イベントを取得するヘルパー関数
+* @param {string} relayUrl - 接続するリレーのURL
+* @param {string} pubkey - 検索する公開鍵
+* @param {number} sinceTime - 検索開始UNIXタイムスタンプ
+* @param {number} untilTime - 検索終了UNIXタイムスタンプ
+* @returns {Promise<Array<Object>>} 取得したイベントの配列
+*/
+const fetchPosts = async (relayUrl, pubkey, sinceTime, untilTime) => {
+const events = [];
+try {
+const relay = NostrTools.relayInit(relayUrl);
+await relay.connect();
+const sub = relay.sub([
 {
 kinds: [1, 42],
 authors: [pubkey],
@@ -162,120 +245,101 @@ since: sinceTime,
 until: untilTime,
 }
 ]);
-sub1.on('event', (event) => {
-kinds1And42Events.push(event);
+return new Promise((resolve, reject) => {
+sub.on('event', (event) => {
+events.push(event);
 });
-await new Promise(resolve => sub1.on('eose', () => {
-postRelay.close();
-console.log(`[Step 2] 投稿の検索が完了しました。投稿数: ${kinds1And42Events.length}件。`);
-resolve();
-}));
-const eventIds = new Set(kinds1And42Events.map(e => e.id));
-if (eventIds.size === 0) {
-displayResults([], []);
-return;
+sub.on('eose', () => {
+relay.close();
+console.log(`[FetchPosts] 投稿の検索が完了しました。投稿数: ${events.length}件。`);
+resolve(events);
+});
+setTimeout(() => {
+relay.close();
+resolve(events); // EOSEが来ない場合でも一定時間で終了
+}, 5000);
+});
+} catch (e) {
+console.error(`[FetchPosts] リレー ${relayUrl} への接続または購読に失敗しました:`, e);
+return events;
 }
-// Kind:6とKind:7のリアクションイベントを検索
-console.log(`[Step 3] 投稿のリアクション（kind:6, 7）を、フォローリレーから検索します...`);
-statusMessage.textContent = `投稿 ${kinds1And42Events.length} 件を検索しました。リアクション情報を取得中...`;
-const reactionEvents = new Map(); // 重複排除のためMapを使用
-const relayPromises = Array.from(relayUrlsToSearch).map(relayUrl => {
+};
+/**
+* Kind:10002とKind:6,7を裏で取得し、差分更新を行う
+* @param {string} pubkey - 著者の公開鍵
+* @param {Array<string>} eventIds - リアクションを検索する投稿IDの配列
+* @param {number} sinceTime - 検索開始UNIXタイムスタンプ
+* @param {number} untilTime - 検索終了UNIXタイムスタンプ
+*/
+const fetchReactionsInBackground = async (pubkey, eventIds, sinceTime, untilTime) => {
+let relayUrlsToSearch = new Set();
+// Kind:10002 (リレーリスト) を取得
+console.log(`[Background] Kind:10002イベントからフォローしているリレーリストを取得します...`);
+try {
+const mainRelay = NostrTools.relayInit(RELAY_URL);
+await mainRelay.connect();
+const sub10002 = mainRelay.sub([{ kinds: [10002], authors: [pubkey], limit: 1 }]);
+const kind10002Event = await new Promise(resolve => {
+sub10002.on('event', (event) => {
+resolve(event);
+});
+sub10002.on('eose', () => {
+resolve(null);
+});
+setTimeout(() => {
+resolve(null);
+}, 3000); // 3秒でタイムアウト
+});
+mainRelay.close();
+if (kind10002Event) {
+kind10002Event.tags.forEach(tag => {
+if (tag[0] === 'r' && tag[1].startsWith('wss://')) {
+relayUrlsToSearch.add(tag[1]);
+}
+});
+console.log(`[Background] Kind:10002イベントの購読が完了しました。検索対象リレーは以下の通りです:`, Array.from(relayUrlsToSearch));
+} else {
+console.log(`[Background] Kind:10002イベントが見つかりませんでした。メインリレーを使用します。`);
+}
+} catch (e) {
+console.error(`[Background] Kind:10002の取得に失敗しました。メインリレーを使用します:`, e);
+}
+// Kind:10002が取得できなかった場合は、ハードコードされたメインリレーを使用
+if (relayUrlsToSearch.size === 0) {
+relayUrlsToSearch.add(RELAY_URL);
+}
+// リアクションイベントをリアルタイムで購読し、定期的に差分更新
+const untilNow = Math.floor(Date.now() / 1000);
+const reactionRelayPromises = Array.from(relayUrlsToSearch).map(relayUrl => {
 return new Promise(async (resolve) => {
 try {
-console.log(`[Log] リレー ${relayUrl} への接続を開始...`);
 const reactionRelay = NostrTools.relayInit(relayUrl);
-reactionRelay.on('error', (e) => {
-console.error(`[Error] リレー ${relayUrl} への接続に失敗しました。`, e);
-resolve();
-});
 await reactionRelay.connect();
-console.log(`[Log] リレー ${relayUrl} に接続成功。購読開始...`);
-const untilNow = Math.floor(Date.now() / 1000);
-const sub2 = reactionRelay.sub([
+const sub = reactionRelay.sub([
 {
 kinds: [6, 7],
-'#e': Array.from(eventIds),
+'#e': eventIds,
 since: sinceTime,
 until: untilNow,
 }
 ]);
-sub2.on('event', (event) => {
-if (!reactionEvents.has(event.id)) {
-reactionEvents.set(event.id, event);
-}
+sub.on('event', (event) => {
+reactionCache.set(event.id, event);
 });
-sub2.on('eose', () => {
+sub.on('eose', () => {
 reactionRelay.close();
 resolve();
 });
 } catch (e) {
-console.error(`[Error] リレー ${relayUrl} で予期せぬエラーが発生しました:`, e);
+console.error(`[Background] リアクション取得用リレー ${relayUrl} への接続に失敗しました。`, e);
 resolve();
 }
 });
 });
-await Promise.all(relayPromises);
-console.log(`[Step 3] すべてのリレーからのリアクションイベントの取得が完了しました。`);
-displayResults(kinds1And42Events, Array.from(reactionEvents.values()));
-} catch (e) {
-statusMessage.textContent = `エラーが発生しました: ${e.message}`;
-console.error('[Fatal Error]', e);
-}
-};
-// 検索結果を表示する関数
-const displayResults = (posts, reactions) => {
-const postList = document.getElementById("post-list");
-const statusMessage = document.getElementById("status");
-fetchedPosts = posts; // 検索結果をグローバル変数に保存
-if (posts.length === 0) {
-statusMessage.textContent = '指定された日付の投稿は見つかりませんでした。';
-return;
-}
-// 投稿日時が古い順（昇順）にソート
-posts.sort((a, b) => a.created_at - b.created_at);
-// リアクション数を集計
-const reactionCounts = {};
-reactions.forEach(reaction => {
-const targetEventId = reaction.tags.find(tag => tag[0] === 'e')?.[1];
-if (targetEventId) {
-if (!reactionCounts[targetEventId]) {
-reactionCounts[targetEventId] = { reposts: 0, reactions: 0 };
-}
-if (reaction.kind === 6) {
-reactionCounts[targetEventId].reposts++;
-} else if (reaction.kind === 7) {
-reactionCounts[targetEventId].reactions++;
-}
-}
-});
-console.log(`[Rendering] 合計 ${reactions.length} 件のリアクションイベントを処理しました。`);
-// 結果をHTMLにレンダリング
-posts.forEach(post => {
-const postElement = document.createElement('div');
-postElement.className = 'post';
-// 日時をフォーマット
-const postDate = new Date(post.created_at * 1000);
-const formattedDate = `${(postDate.getMonth() + 1).toString().padStart(2, '0')}/${postDate.getDate().toString().padStart(2, '0')} ${postDate.getHours().toString().padStart(2, '0')}:${postDate.getMinutes().toString().padStart(2, '0')}`;
-// neventリンクを作成
-const eventPointer = {
-id: post.id,
-relays: [RELAY_URL], // 検索に使用したリレーを含める
-author: post.pubkey, // 著者の公開鍵を含める
-};
-// NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
-const nevent = NostrTools.nip19.neventEncode(eventPointer);
-const njumpLink = `https://njump.me/${nevent}`;
-const counts = reactionCounts[post.id] || { reposts: 0, reactions: 0 };
-postElement.innerHTML = `
-<div class="post-line">
-<a href="${njumpLink}" target="_blank" class="post-time">[${formattedDate}]</a>
-${linkifyAndEscapeHtml(post.content)}
-${counts.reposts > 0 || counts.reactions > 0 ? ` [⭐${counts.reactions} 🔁${counts.reposts}] ` : ''}
-</div>
-`;
-postList.appendChild(postElement);
-});
-statusMessage.textContent = `この日の投稿数：${posts.length}ツイート`;
+await Promise.all(reactionRelayPromises);
+// 取得したリアクションで差分更新
+renderPostsAndReactions(fetchedPosts, Array.from(reactionCache.values()), false);
+console.log(`[Background] すべてのリレーからのリアクションイベントの初期取得が完了しました。`);
 };
 // HTMLエスケープ関数
 const escapeHtml = (text) => {
