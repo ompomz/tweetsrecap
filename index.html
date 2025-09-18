@@ -167,7 +167,7 @@ author: post.pubkey, // 著者の公開鍵を含める
 };
 // NostrTools.nip19 を使用 (バージョン1.17.0の挙動)
 const nevent = NostrTools.nip19.neventEncode(eventPointer);
-const customViewerUrl = `/tweetsrecap/tweet?nevent=${nevent}`;
+const customViewerUrl = `/tweetsrecap/tweet?id=${nevent}`;
 postElement.innerHTML = `
   <div class="post-line">
     <a href="${customViewerUrl}" target="_blank" class="post-time">[${formattedDate}]</a>
