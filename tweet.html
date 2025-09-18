@@ -46,28 +46,47 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 </head>
 <body>
 <div id="header-placeholder"></div>
- <div class="container">
- <div class="header-section">
- <button onclick="goBack()">もどる</button>
- <button onclick="copyUrl()">シェア</button>
- </div> 
- <div id="main-event">
- </div>
- <p id="status"></p>
- <div id="reactions-section" style="display: none;">
- <h2 class="section-header"></h2>
- <div id="reactions-list" class="reactions-list"></div>
- </div> 
- <div id="related-events-section" style="display: none;">
- <h2 class="section-header"></h2>
- <div id="related-events-list" class="related-posts"></div>
- </div>
- <div class="footer-section">
- <button onclick="goBack()">もどる</button>
- </div>
- </div>
+<div class="container">
+<div class="header-section">
+<button onclick="goBack()">もどる</button>
+<button onclick="copyUrl()">シェア</button>
+</div>
+<div id="main-event">
+</div>
+<p id="status"></p>
+<div id="reactions-section" style="display: none;">
+<h2 class="section-header"></h2>
+<div id="reactions-list" class="reactions-list"></div>
+</div>
+<div id="related-events-section" style="display: none;">
+<h2 class="section-header"></h2>
+<div id="related-events-list" class="related-posts"></div>
+</div>
+<div class="footer-section">
+<button onclick="goBack()">もどる</button>
+</div>
+</div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script>
+    function goBack() {
+        if (window.history.length > 1) {
+            window.history.back();
+        } else {
+            window.location.href = 'https://ompomz.github.io/flowgazer/index2';
+        }
+    }
+
+    function copyUrl() {
+        navigator.clipboard.writeText(window.location.href)
+            .then(() => {
+                alert('URLがコピーされました！');
+            })
+            .catch(err => {
+                console.error('URLのコピーに失敗しました:', err);
+                alert('URLのコピーに失敗しました。');
+            });
+    }
+
     const mainEventContainer = document.getElementById('main-event');
     const statusElement = document.getElementById('status');
     const reactionsSection = document.getElementById('reactions-section');
@@ -75,7 +94,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     const relatedEventsSection = document.getElementById('related-events-section');
     const relatedEventsList = document.getElementById('related-events-list');
 
-    const RELAY_URLS = [
+    const FALLBACK_RELAYS = [
         'wss://relay.nostr.band',
         'wss://nos.lol',
     ];
@@ -83,7 +102,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     const pool = new window.NostrTools.SimplePool();
     const userProfiles = {};
 
-    RELAY_URLS.forEach(url => {
+    // すべてのフォールバックリレーをプールに追加
+    FALLBACK_RELAYS.forEach(url => {
         pool.ensureRelay(url).then(relay => {
             relay.on('connect', () => console.log(`✅ リレーに接続しました: ${url}`));
             relay.on('disconnect', () => console.warn(`⚠️ リレーから切断されました: ${url}`));
@@ -120,11 +140,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
                 data
             } = decoded;
             if (type === 'note' || type === 'nevent') {
-                return `?nevent=${nip19}`;
+                return `?id=${nip19}`;
             } else if (type === 'npub' || type === 'nprofile') {
                 const pubkey = data.id || data;
                 const npub = window.NostrTools.nip19.npubEncode(pubkey);
-                return `?npub=${npub}`;
+                return `?id=${npub}`;
+            } else if (type === 'naddr') {
+                return `?id=${nip19}`;
             }
             return '#';
         } catch (e) {
@@ -141,18 +163,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
             }
             return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
         });
-
-        formattedContent = formattedContent.replace(/nostr:(n(?:pub|event|note|profile|relay)1\S+)/g, (match, nip19) => {
+        formattedContent = formattedContent.replace(/nostr:(n(?:pub|event|note|profile|relay|addr)1\S+)/g, (match, nip19) => {
             const link = createNostrLink(nip19);
             return `<a href="${link}" class="nostr-link">${match}</a>`;
         });
-
         const customEmojis = tags.filter(t => t[0] === 'emoji');
         customEmojis.forEach(([_, shortcode, url]) => {
             const regex = new RegExp(`:${shortcode}:`, 'g');
             formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
         });
-
         return formattedContent.replace(/\n/g, '<br>');
     }
 
@@ -160,10 +179,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
         if (pubkeys.length === 0) return;
         const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
         if (pubkeysToFetch.length === 0) return;
-
-        const profiles = await pool.list(RELAY_URLS, [{
+        // until: 現在 を追加
+        const until = Math.floor(Date.now() / 1000);
+        const profiles = await pool.list(FALLBACK_RELAYS, [{
             kinds: [0],
-            authors: pubkeysToFetch
+            authors: pubkeysToFetch,
+            until: until,
+            limit: 1 // 最新のプロフィールイベント1件を取得
         }]);
         profiles.forEach(p => {
             try {
@@ -189,32 +211,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
                 </div>
             </div>
         `;
-
         if (isLink) {
-            const profileUrl = `?npub=${npub}`;
+            const profileUrl = `?id=${npub}`;
             return `<a href="${profileUrl}" class="profile-link">${profileContentHtml}</a>`;
         } else {
             return profileContentHtml;
         }
-    }
-
-    function goBack() {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.location.href = 'https://ompomz.github.io/flowgazer/index2';
-        }
-    }
-
-    function copyUrl() {
-        navigator.clipboard.writeText(window.location.href)
-            .then(() => {
-                alert('URLがコピーされました！');
-            })
-            .catch(err => {
-                console.error('URLのコピーに失敗しました:', err);
-                alert('URLのコピーに失敗しました。');
-            });
     }
 
     function renderMainEvent(event) {
@@ -245,6 +247,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
             group.count++;
             group.pubkeys.add(reaction.pubkey);
         });
+
         reactionsList.innerHTML = '';
         for (const [emoji, group] of reactionGroups.entries()) {
             const avatarsHtml = Array.from(group.pubkeys).map(pubkey => {
@@ -252,12 +255,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
                     picture: DEFAULT_PROFILE_IMAGE
                 };
                 const npub = window.NostrTools.nip19.npubEncode(pubkey);
-                const profileUrl = `?npub=${npub}`;
+                const profileUrl = `?id=${npub}`;
                 return `<a href="${profileUrl}"><img src="${profile.picture}" class="reaction-avatar" alt="reaction user avatar"></a>`;
             }).join('');
+
+            const displayedEmoji = emoji === '+' ? '⭐' : emoji;
             const groupHtml = `
                 <div class="reaction-group">
-                    <span class="reaction-emoji">${emoji}</span>
+                    <span class="reaction-emoji">${displayedEmoji}</span>
                     <div class="reaction-avatars">${avatarsHtml}</div>
                 </div>
             `;
@@ -269,11 +274,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
     function renderRelatedEvents(posts, reposts, quotes) {
         const allRelatedEvents = [...posts, ...reposts, ...quotes];
         allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
+
         relatedEventsList.innerHTML = '';
         allRelatedEvents.forEach(event => {
             const date = new Date(event.created_at * 1000).toLocaleString();
             let postContentHtml = '';
             let postTypeLabel = '';
+
             switch (event.kind) {
                 case 1:
                     postTypeLabel = 'リプライ';
@@ -291,6 +298,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
                     postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
                     break;
             }
+
             const html = `
                 <div class="related-post-card">
                     ${createProfileHtml(event.pubkey)}
@@ -303,72 +311,112 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
             `;
             relatedEventsList.innerHTML += html;
         });
+
         relatedEventsSection.style.display = 'block';
     }
 
-    async function renderEventDetail(nevent) {
+    async function renderEventDetail(nostrId) {
         showStatus('イベントデータを取得中...');
         try {
-            const decoded = window.NostrTools.nip19.decode(nevent);
-            if (decoded.type !== 'nevent') {
-                showStatus('エラー: 無効なnevent形式です。');
-                return;
+            const decoded = window.NostrTools.nip19.decode(nostrId);
+            const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+            const until = Math.floor(Date.now() / 1000);
+            let eventId;
+            let filters = {};
+
+            switch (decoded.type) {
+                case 'note':
+                case 'nevent':
+                    eventId = decoded.data.id || decoded.data;
+                    filters = {
+                        ids: [eventId]
+                    };
+                    break;
+                case 'naddr':
+                    eventId = decoded.data.id;
+                    filters = {
+                        authors: [decoded.data.pubkey],
+                        kinds: [decoded.data.kind],
+                        '#d': [decoded.data.identifier]
+                    };
+                    break;
+                default:
+                    showStatus('エラー: 無効なID形式です。');
+                    return;
             }
-            const eventId = decoded.data.id;
-            console.log(`ℹ️ イベントID ${eventId} の取得を開始します。`);
-            const mainEventPromise = pool.get(RELAY_URLS, {
-                ids: [eventId],
-                kinds: [1]
+
+            console.log(`ℹ️ ID ${nostrId} の取得を開始します。`);
+
+            const mainEventPromise = pool.get(relays, { ...filters,
+                until: until,
+                limit: 1
             });
-            const relatedEventsPromise = pool.list(RELAY_URLS, [{
+            const relatedEventsPromise = pool.list(relays, [{
                 '#e': [eventId],
-                kinds: [1, 6, 7, 16]
-            }]);
+                kinds: [1, 6, 7, 16],
+                until: until
+            }]); // ここを修正
+
             const [mainEvent, relatedEvents] = await Promise.all([mainEventPromise, relatedEventsPromise]);
+
             if (!mainEvent) {
                 showStatus('イベントが見つかりませんでした');
                 return;
             }
+
             const pubkeysToFetch = new Set();
             pubkeysToFetch.add(mainEvent.pubkey);
             relatedEvents.forEach(e => pubkeysToFetch.add(e.pubkey));
+
             await fetchProfiles(Array.from(pubkeysToFetch));
             renderMainEvent(mainEvent);
+
             const reactions = relatedEvents.filter(e => e.kind === 7);
             const posts = relatedEvents.filter(e => e.kind === 1);
             const reposts = relatedEvents.filter(e => e.kind === 6);
             const quotes = relatedEvents.filter(e => e.kind === 16);
+
             if (reactions.length > 0) renderReactions(reactions);
             if (posts.length > 0 || reposts.length > 0 || quotes.length > 0) {
                 renderRelatedEvents(posts, reposts, quotes);
             }
+
             showStatus('');
             console.log('✅ すべての処理が完了しました。');
+
         } catch (err) {
             console.error('❌ イベントの取得中にエラーが発生しました:', err);
             showStatus('イベントの取得中にエラーが発生しました。');
         } finally {
-            pool.close(RELAY_URLS);
+            pool.close(FALLBACK_RELAYS);
         }
     }
 
-    async function renderProfileDetail(npub) {
+    async function renderProfileDetail(nostrId) {
         showStatus('プロフィール情報を取得中...');
         try {
-            const decoded = window.NostrTools.nip19.decode(npub);
+            const decoded = window.NostrTools.nip19.decode(nostrId);
             if (decoded.type !== 'npub' && decoded.type !== 'nprofile') {
-                showStatus('エラー: 無効なnpub形式です。');
+                showStatus('エラー: 無効なnpubまたはnprofile形式です。');
                 return;
             }
+
+            const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
             const pubkey = decoded.data.id || decoded.data;
-            const profileEvent = await pool.get(RELAY_URLS, {
+            const until = Math.floor(Date.now() / 1000);
+
+            const profileEvent = await pool.get(relays, {
                 kinds: [0],
-                authors: [pubkey]
+                authors: [pubkey],
+                until: until,
+                limit: 1
             });
+
             if (!profileEvent) {
                 showStatus('プロフィールが見つかりませんでした。');
                 return;
             }
+
             const profile = JSON.parse(profileEvent.content);
             const html = `
                 <div class="profile-card">
@@ -379,13 +427,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
                     <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
                 </div>
             `;
+
             mainEventContainer.innerHTML = html;
             showStatus('');
+
         } catch (err) {
             console.error('プロフィール取得中にエラー:', err);
             showStatus('プロフィールの取得中にエラーが発生しました。');
         } finally {
-            pool.close(RELAY_URLS);
+            pool.close(FALLBACK_RELAYS);
         }
     }
 
@@ -403,24 +453,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const input = document.getElementById('nostr-id-input').value.trim();
-            if (input.startsWith('nevent1') || input.startsWith('note1')) {
-                window.location.href = `?nevent=${input}`;
+            if (input.startsWith('note1') || input.startsWith('nevent1') || input.startsWith('naddr1')) {
+                window.location.href = `?id=${input}`;
             } else if (input.startsWith('npub1') || input.startsWith('nprofile1')) {
-                window.location.href = `?npub=${input}`;
+                window.location.href = `?id=${input}`;
             } else {
-                alert('有効なNostr ID (nevent, npub, note, nprofile) を入力してください。');
+                alert('有効なNostr ID (note1, nevent1, naddr1, npub1, nprofile1) を入力してください。');
             }
         });
     }
 
     window.onload = () => {
         const urlParams = new URLSearchParams(window.location.search);
-        const nevent = urlParams.get('nevent');
-        const npub = urlParams.get('npub');
-        if (nevent) {
-            renderEventDetail(nevent);
-        } else if (npub) {
-            renderProfileDetail(npub);
+        const id = urlParams.get('id');
+        if (id) {
+            if (id.startsWith('npub1') || id.startsWith('nprofile1')) {
+                renderProfileDetail(id);
+            } else if (id.startsWith('note1') || id.startsWith('nevent1') || id.startsWith('naddr1')) {
+                renderEventDetail(id);
+            } else {
+                showStatus('エラー: 無効なNostr ID形式です。');
+                renderInputForm();
+            }
         } else {
             renderInputForm();
         }
