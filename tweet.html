@@ -42,6 +42,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .form-title { margin-bottom: 1rem; }
 .nostr-form { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
 .form-input { width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.post-content ul, .post-content ol { list-style-position: inside; }
 </style>
 </head>
 <body>
@@ -67,6 +68,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 </div>
 </div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
     function goBack() {
         if (window.history.length > 1) {
@@ -219,19 +221,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
         }
     }
 
-    function renderMainEvent(event) {
-        const date = new Date(event.created_at * 1000).toLocaleString();
-        const client = event.tags.find(t => t[0] === 'client')?.[1] || '';
-        const html = `
-            ${createProfileHtml(event.pubkey)}
-            <div class="post-content">${formatPostContent(event.content, event.tags)}</div>
-            <div class="post-info">
-                <span>${date}</span>
-                ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}
-            </div>
-        `;
-        mainEventContainer.innerHTML = html;
+function renderMainEvent(event) {
+    const date = new Date(event.created_at * 1000).toLocaleString();
+    const client = event.tags.find(t => t[0] === 'client')?. [1] || '';
+
+    let contentHtml;
+    // kindによってコンテンツの描画方法を切り替える
+    if (event.kind === 30023) {
+        // kind:30023の場合、MarkdownをHTMLに変換する
+        // marked.jsを使用
+        contentHtml = window.marked.parse(event.content);
+        // その他の独自処理があればここに追加
+        // nostr:リンクなどをHTMLに変換
+        contentHtml = contentHtml.replace(/nostr:(n(?:pub|event|note|profile|relay|addr)1\S+)/g, (match, nip19) => {
+            const link = createNostrLink(nip19);
+            return `<a href="${link}" class="nostr-link">${match}</a>`;
+        });
+    } else {
+        // kind:1やその他のkindの場合、既存の関数を使用
+        contentHtml = formatPostContent(event.content, event.tags);
     }
+    
+    const html = `
+        ${createProfileHtml(event.pubkey)}
+        <div class="post-content">${contentHtml}</div>
+        <div class="post-info">
+            <span>${date}</span>
+            ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}
+        </div>
+    `;
+    mainEventContainer.innerHTML = html;
+}
 
     function renderReactions(reactions) {
         const reactionGroups = new Map();
