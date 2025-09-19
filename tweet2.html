@@ -45,6 +45,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .form-input { flex: 1; min-width: 0; width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
 .form-button { flex-shrink: 0; padding:0.5rem 1.2rem !important; }
 .footer-section { padding: 0.5rem 0; border-top: 1px dashed #ddd; }
+.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -56,7 +57,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 </div>
 <div id="main-event">
 </div>
-<p id="status"></p>
+<p id="status" class="hidden"></p>
 <div id="reactions-section" style="display: none;">
 <div id="reactions-list" class="reactions-list"></div>
 </div>
@@ -115,8 +116,12 @@ FALLBACK_RELAYS.forEach(url => {
 });
 
 function showStatus(message) {
- statusElement.textContent = message;
- statusElement.style.display = message ? 'block' : 'none';
+  statusElement.textContent = message;
+  if (message) {
+    statusElement.classList.remove('hidden');
+  } else {
+    statusElement.classList.add('hidden');
+  }
 }
 
 function escapeHtml(str) {
