@@ -1,48 +1,49 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>tweets recap</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>tweets recap</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; line-height: 1.5; background-color: #f7f7f7; color: #666; font-size: 0.9rem; padding: 0.5rem; }
-.container { max-width: 600px; margin: 0; padding: 0.5rem; border-radius: 4px; background-color: #f7f7f7; }
+.container { max-width: 600px; margin: 0; padding: 0.5rem; border-radius: 4px; }
+.container h1 { font-size: 1.3rem; }
+.container h2 { font-size: 1.1rem; }
+.container a { color: #66b3ff; text-decoration: none; }
+.container a:hover { color: #4da6ff; text-decoration: underline; }
 @media (max-width: 767px) { .container { max-width: 100%; } }
-.header-buttons button, .container button { border: none; font-size: 0.8rem; padding: 0.5rem 0.8rem; border-radius: 999px; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; }
-.header-buttons button:hover, .container button:hover { background-color: #ffa347; }
+.container button { border: none; font-size: 0.8rem; padding: 0.5rem 0.8rem; border-radius: 999px; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; }
+.container button:hover { background-color: #ffa347; }
 .header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 0px solid #ddd; }
 #main-event { padding: 1rem 0; border-bottom: 1px dashed #ddd; }
-.section-header { margin: 1rem 0 0.5rem; font-size: 1rem; color: #444; font-weight: bold; }
-.profile, .related-post-card .profile { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-.profile-image { width: 2rem; height: 2rem; border-radius: 50%; object-fit: cover; }
+#status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; text-align: center; }
+.section-header { margin: 1rem 0 0.5rem; font-size: 1rem; color: #444; }
+.reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.reaction-group { display: flex; align-items: center; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
+.reaction-emoji { line-height: 1rem; height: 1rem; }
+.reaction-avatars { display: flex; flex-direction: row-reverse; }
+.reaction-avatar { width: 1rem; height: 1rem; border-radius: 50%; object-fit: cover; display: block; vertical-align: middle; margin-bottom: 0; }
+.related-posts { margin-top: 1rem; }
+.related-post-card { background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; margin-bottom: 0.5rem; }
+.related-post-card .profile { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.related-post-card .profile-name, .related-post-card .profile-npub { font-size: 0.8rem; }
 .related-post-card .profile-image { width: 1.5rem; height: 1.5rem; }
+.related-post-card .post-content { font-size: 0.8rem; margin-top: 0.25rem; }
+.profile { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.profile-image { width: 2rem; height: 2rem; border-radius: 50%; object-fit: cover; }
 .profile-name { font-weight: bold; font-size: 1rem; color: #444; }
-.profile-nip05, .profile-npub { font-size: 0.8rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-nip05, .profile-npub { font-size: 0.8rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .profile-card { text-align: center; padding: 1rem; background-color: #fff; border-radius: 8px; border: 1px solid #ddd; }
 .profile-card img { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid #ffb366; }
 .post-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #999; margin-top: 0.25rem; }
-.post-content { margin-top: 0.5rem; line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; }
+.post-content { margin-top: 0.5rem; line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
 .post-content img { max-width: 100%; height: auto; display: block; margin-top: 0.5rem; }
-.custom-emoji { height: 1.2rem; vertical-align: middle; display: inline-block; }
-.nostr-link { color: #66b3ff; text-decoration: none; }
-.nostr-link:hover { text-decoration: underline; }
-.reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
-.reaction-group { display: flex; align-items: center; gap: 0.2rem; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
-.reaction-emoji { font-size: 1rem; }
-.reaction-avatars { display: flex; flex-direction: row-reverse; }
-.reaction-avatar { width: 1.2rem; height: 1.2rem; border-radius: 50%; object-fit: cover; border: 1px solid #fff; margin-left: -0.5rem; }
-.related-posts { margin-top: 1rem; }
-.related-post-card { background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; margin-bottom: 0.5rem; }
-.related-post-card .profile-name, .related-post-card .profile-npub { font-size: 0.8rem; }
-.related-post-card .post-content { font-size: 0.8rem; margin-top: 0.25rem; }
-#status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; text-align: center; }
-.footer-section { text-align: center; padding: 1rem 0; }
-.input-form-container { text-align: center; }
-.form-title { margin-bottom: 1rem; }
+.post-content img.custom-emoji { vertical-align: middle; display: inline-block; height: 1.2rem !important; }
+.post-content ul, .post-content ol { list-style-position: inside; }
 .nostr-form { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
 .form-input { width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-.post-content ul, .post-content ol { list-style-position: inside; }
+.footer-section { text-align: center; padding: 1rem 0; }
 </style>
 </head>
 <body>
