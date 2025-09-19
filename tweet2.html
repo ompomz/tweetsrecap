@@ -70,15 +70,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
- function goBack() {
+function goBack() {
  if (window.history.length > 1) {
  window.history.back();
  } else {
  window.location.href = 'https://ompomz.github.io/flowgazer/index2';
  }
- }
+}
 
- function copyUrl() {
+function copyUrl() {
  navigator.clipboard.writeText(window.location.href)
  .then(() => {
  alert('URLがコピーされました！');
@@ -87,25 +87,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  console.error('URLのコピーに失敗しました:', err);
  alert('URLのコピーに失敗しました。');
  });
- }
+}
 
- const mainEventContainer = document.getElementById('main-event');
- const statusElement = document.getElementById('status');
- const reactionsSection = document.getElementById('reactions-section');
- const reactionsList = document.getElementById('reactions-list');
- const relatedEventsSection = document.getElementById('related-events-section');
- const relatedEventsList = document.getElementById('related-events-list');
+const mainEventContainer = document.getElementById('main-event');
+const statusElement = document.getElementById('status');
+const reactionsSection = document.getElementById('reactions-section');
+const reactionsList = document.getElementById('reactions-list');
+const relatedEventsSection = document.getElementById('related-events-section');
+const relatedEventsList = document.getElementById('related-events-list');
 
- const FALLBACK_RELAYS = [
+const FALLBACK_RELAYS = [
  'wss://relay.nostr.band',
  'wss://nos.lol',
- ];
+];
+const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
+const pool = new window.NostrTools.SimplePool();
+const userProfiles = {};
 
- const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
- const pool = new window.NostrTools.SimplePool();
- const userProfiles = {};
-
- FALLBACK_RELAYS.forEach(url => {
+FALLBACK_RELAYS.forEach(url => {
  pool.ensureRelay(url).then(relay => {
  relay.on('connect', () => console.log(`✅ リレーに接続しました: ${url}`));
  relay.on('disconnect', () => console.warn(`⚠️ リレーから切断されました: ${url}`));
@@ -113,15 +112,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  }).catch(err => {
  console.error(`接続プールの設定中にエラーが発生しました: ${url}`, err);
  });
- });
+});
 
- function showStatus(message) {
+function showStatus(message) {
  statusElement.textContent = message;
- // 修正箇所
  statusElement.style.display = message ? 'block' : 'none';
- }
+}
 
- function escapeHtml(str) {
+function escapeHtml(str) {
  if (!str) return '';
  return str.replace(/[&<>"']/g, function(match) {
  const escape = {
@@ -133,9 +131,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  };
  return escape[match];
  });
- }
+}
 
- function createNostrLink(nip19) {
+function createNostrLink(nip19) {
  try {
  const decoded = window.NostrTools.nip19.decode(nip19);
  const {
@@ -156,9 +154,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  console.error('Failed to decode nostr link:', e);
  return '#';
  }
- }
+}
 
- function formatPostContent(content, tags) {
+function formatPostContent(content, tags) {
  let formattedContent = escapeHtml(content);
  formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
  if (/\.(png|jpe?g|gif|webp|svg|heic|avif)$/i.test(url)) {
@@ -176,9 +174,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
  });
  return formattedContent.replace(/\n/g, '<br>');
- }
+}
 
- async function fetchProfiles(pubkeys) {
+async function fetchProfiles(pubkeys) {
  if (pubkeys.length === 0) return;
  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
  if (pubkeysToFetch.length === 0) return;
@@ -196,9 +194,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
  }
  });
- }
+}
 
- function createProfileHtml(pubkey, isLink = true) {
+function createProfileHtml(pubkey, isLink = true) {
  const profile = userProfiles[pubkey] || {
  name: 'Unknown',
  picture: DEFAULT_PROFILE_IMAGE
@@ -219,11 +217,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  } else {
  return profileContentHtml;
  }
- }
-
- function renderMainEvent(event) {
+}
+function renderMainEvent(event) {
  const date = new Date(event.created_at * 1000).toLocaleString();
- const client = event.tags.find(t => t[0] === 'client') ? .[1] || '';
+ const client = event.tags.find(t => t[0] === 'client')?. [1] || '';
  let contentHtml;
  if (event.kind === 30023) {
  contentHtml = window.marked.parse(event.content);
@@ -240,10 +237,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  <div class="post-info">
  <span>${date}</span>
  ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}</div>`;
- mainEventContainer.innerHTML = html;
- }
-
- function renderReactions(reactions) {
+mainEventContainer.innerHTML = html;
+}
+function renderReactions(reactions) {
  const reactionGroups = new Map();
  reactions.forEach(reaction => {
  const emoji = reaction.content.trim();
@@ -277,9 +273,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  reactionsList.innerHTML += groupHtml;
  }
  reactionsSection.style.display = 'block';
- }
+}
 
- function renderRelatedEvents(posts, reposts, quotes) {
+function renderRelatedEvents(posts, reposts, quotes) {
  const allRelatedEvents = [...posts, ...reposts, ...quotes];
  allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
  relatedEventsList.innerHTML = '';
@@ -317,9 +313,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  relatedEventsList.innerHTML += html;
  });
  relatedEventsSection.style.display = 'block';
- }
+}
 
- async function renderEventDetail(nostrId) {
+async function renderEventDetail(nostrId) {
  showStatus('イベントデータを取得中...');
  try {
  const decoded = window.NostrTools.nip19.decode(nostrId);
@@ -350,7 +346,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  console.log(`ℹ️ ID ${nostrId} の取得を開始します。`);
  console.log(' - フィルター:', filters);
  console.log(' - 使用リレー:', relays);
- const mainEventPromise = pool.get(relays, { ...filters,
+ const mainEventPromise = pool.get(relays, {
+ ...filters,
  until: until,
  limit: 1
  });
@@ -399,10 +396,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  } catch (err) {
  console.error('❌ イベントの取得中にエラーが発生しました:', err);
  showStatus('イベントの取得中にエラーが発生しました。');
- } finally {}
- }
+ } finally { }
+}
 
- async function fetchProfiles(pubkeys) {
+async function fetchProfiles(pubkeys) {
  if (pubkeys.length === 0) return;
  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
  if (pubkeysToFetch.length > 0) {
@@ -423,9 +420,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
  }
  });
- }
-
- async function renderProfileDetail(nostrId) {
+}
+async function renderProfileDetail(nostrId) {
  showStatus('プロフィール情報を取得中...');
  try {
  const decoded = window.NostrTools.nip19.decode(nostrId);
@@ -447,7 +443,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  return;
  }
  const profile = JSON.parse(profileEvent.content);
- const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : '';
+ const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : ''; 
  const html = `
  <div class="profile-card">
  <img src="${profile.picture}" alt="Profile Picture">
@@ -462,10 +458,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  } catch (err) {
  console.error('プロフィール取得中にエラー:', err);
  showStatus('プロフィールの取得中にエラーが発生しました。');
- } finally {}
- }
-
- function renderInputForm() {
+ } finally { }
+}
+function renderInputForm() {
  mainEventContainer.innerHTML = `
  <div class="input-form-container">
  <p class="form-title">イベントまたはユーザーのNostr IDを入力してください</p>
@@ -487,9 +482,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  alert('有効なNostr ID (note1, nevent1, naddr1, npub1, nprofile1) を入力してください。');
  }
  });
- }
+}
 
- window.onload = () => {
+window.onload = () => {
  const urlParams = new URLSearchParams(window.location.search);
  const id = urlParams.get('id');
  if (id) {
@@ -504,7 +499,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  } else {
  renderInputForm();
  }
- };
+};
 </script>
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
