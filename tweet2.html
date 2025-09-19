@@ -15,10 +15,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 @media (max-width: 767px) { .container { max-width: 100%; } }
 .container button { border: none; font-size: 0.8rem; padding: 0.5rem 0.8rem; border-radius: 999px; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; }
 .container button:hover { background-color: #ffa347; }
-.header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 0px solid #ddd; }
+.header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px dashed #ddd; }
 #main-event { padding: 0.5rem 0; }
 #status { margin: 0.5rem 0rem; font-weight: bold; color: #ff99cc; }
-.reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0rem 0rem 0.5rem 0rem; }
 .reaction-group { display: flex; align-items: center; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
 .reaction-emoji { line-height: 1rem; height: 1rem; }
 .reaction-avatars { display: flex; flex-direction: row-reverse; }
@@ -43,7 +43,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .nostr-form { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; }
 .form-input { flex: 1; min-width: 0; width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
 .form-button { flex-shrink: 0; padding:0.5rem 1.2rem !important; }
-.footer-section { text-align: center; padding: 0.5rem 0; }
+.footer-section { padding: 0.5rem 0; border-top: 1px dashed #ddd; }
 </style>
 </head>
 <body>
