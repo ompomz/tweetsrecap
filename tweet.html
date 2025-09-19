@@ -10,40 +10,42 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .container { max-width: 600px; margin: 0; padding: 0.5rem; border-radius: 4px; }
 .container h1 { font-size: 1.3rem; }
 .container h2 { font-size: 1.1rem; }
+.container p { padding: 0.25rem 0rem; }
 .container a { color: #66b3ff; text-decoration: none; }
 .container a:hover { color: #4da6ff; text-decoration: underline; }
 @media (max-width: 767px) { .container { max-width: 100%; } }
 .container button { border: none; font-size: 0.8rem; padding: 0.5rem 0.8rem; border-radius: 999px; font-weight: bold; cursor: pointer; background-color: #ffb366; color: #fff; transition: background-color 0.3s ease, color 0.3s ease; }
 .container button:hover { background-color: #ffa347; }
-.header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 0px solid #ddd; }
-#main-event { padding: 1rem 0; border-bottom: 1px dashed #ddd; }
-#status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; text-align: center; }
-.section-header { margin: 1rem 0 0.5rem; font-size: 1rem; color: #444; }
-.reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px dashed #ddd; }
+#main-event { padding: 0.5rem 0; }
+#status { margin: 0.5rem 0rem; font-weight: bold; color: #ff99cc; }
+.reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.25rem 0rem 0.75rem 0rem; }
 .reaction-group { display: flex; align-items: center; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
 .reaction-emoji { line-height: 1rem; height: 1rem; }
 .reaction-avatars { display: flex; flex-direction: row-reverse; }
 .reaction-avatar { width: 1rem; height: 1rem; border-radius: 50%; object-fit: cover; display: block; vertical-align: middle; margin-bottom: 0; }
-.related-posts { margin-top: 1rem; }
-.related-post-card { background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; margin-bottom: 0.5rem; }
-.related-post-card .profile { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.related-posts { margin: 0.5rem 0rem; }
+.related-post-card { background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0rem; }
+.related-post-card .profile { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0rem; }
 .related-post-card .profile-name, .related-post-card .profile-npub { font-size: 0.8rem; }
 .related-post-card .profile-image { width: 1.5rem; height: 1.5rem; }
-.related-post-card .post-content { font-size: 0.8rem; margin-top: 0.25rem; }
+.related-post-card .post-content { font-size: 0.8rem; margin: 0.25rem 0rem; }
 .profile { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .profile-image { width: 2rem; height: 2rem; border-radius: 50%; object-fit: cover; }
 .profile-name { font-weight: bold; font-size: 1rem; color: #444; }
 .profile-nip05, .profile-npub { font-size: 0.8rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .profile-card { text-align: center; padding: 1rem; background-color: #fff; border-radius: 8px; border: 1px solid #ddd; }
-.profile-card img { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; margin-bottom: 1rem; border: 3px solid #ffb366; }
-.post-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #999; margin-top: 0.25rem; }
-.post-content { margin-top: 0.5rem; line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
-.post-content img { max-width: 100%; height: auto; display: block; margin-top: 0.5rem; }
+.profile-card img { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; margin: 0.5rem 0rem; border: 2px solid #ffb366; }
+.post-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #999; }
+.post-content { margin: 0.5rem 0rem; line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
+.post-content img { max-width: 100%; height: auto; display: block; margin: 0.5rem 0rem; }
 .post-content img.custom-emoji { vertical-align: middle; display: inline-block; height: 1.2rem !important; }
 .post-content ul, .post-content ol { list-style-position: inside; }
-.nostr-form { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
-.form-input { width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
-.footer-section { text-align: center; padding: 1rem 0; }
+.nostr-form { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; padding-bottom: 0.25rem; }
+.form-input { flex: 1; min-width: 0; width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.form-button { flex-shrink: 0; padding:0.5rem 1.2rem !important; }
+.footer-section { padding: 0.5rem 0; border-top: 1px dashed #ddd; }
+.hidden { display: none; }
 </style>
 </head>
 <body>
@@ -55,13 +57,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 </div>
 <div id="main-event">
 </div>
-<p id="status"></p>
+<p id="status" class="hidden"></p>
 <div id="reactions-section" style="display: none;">
-<h2 class="section-header"></h2>
 <div id="reactions-list" class="reactions-list"></div>
 </div>
 <div id="related-events-section" style="display: none;">
-<h2 class="section-header"></h2>
 <div id="related-events-list" class="related-posts"></div>
 </div>
 <div class="footer-section">
@@ -71,435 +71,439 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-    function goBack() {
-        if (window.history.length > 1) {
-            window.history.back();
-        } else {
-            window.location.href = 'https://ompomz.github.io/flowgazer/index2';
-        }
-    }
-
-    function copyUrl() {
-        navigator.clipboard.writeText(window.location.href)
-            .then(() => {
-                alert('URLがコピーされました！');
-            })
-            .catch(err => {
-                console.error('URLのコピーに失敗しました:', err);
-                alert('URLのコピーに失敗しました。');
-            });
-    }
-
-    const mainEventContainer = document.getElementById('main-event');
-    const statusElement = document.getElementById('status');
-    const reactionsSection = document.getElementById('reactions-section');
-    const reactionsList = document.getElementById('reactions-list');
-    const relatedEventsSection = document.getElementById('related-events-section');
-    const relatedEventsList = document.getElementById('related-events-list');
-
-    const FALLBACK_RELAYS = [
-        'wss://relay.nostr.band',
-        'wss://nos.lol',
-    ];
-    const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
-    const pool = new window.NostrTools.SimplePool();
-    const userProfiles = {};
-
-    // すべてのフォールバックリレーをプールに追加
-    FALLBACK_RELAYS.forEach(url => {
-        pool.ensureRelay(url).then(relay => {
-            relay.on('connect', () => console.log(`✅ リレーに接続しました: ${url}`));
-            relay.on('disconnect', () => console.warn(`⚠️ リレーから切断されました: ${url}`));
-            relay.on('error', () => console.error(`❌ リレー接続エラー: ${url}`));
-        }).catch(err => {
-            console.error(`接続プールの設定中にエラーが発生しました: ${url}`, err);
-        });
-    });
-
-    function showStatus(message) {
-        statusElement.textContent = message;
-        statusElement.style.display = message ? 'block' : 'none';
-    }
-
-    function escapeHtml(str) {
-        if (!str) return '';
-        return str.replace(/[&<>"']/g, function(match) {
-            const escape = {
-                '&': '&amp;',
-                '<': '&lt;',
-                '>': '&gt;',
-                '"': '&quot;',
-                "'": '&#39;'
-            };
-            return escape[match];
-        });
-    }
-
-    function createNostrLink(nip19) {
-        try {
-            const decoded = window.NostrTools.nip19.decode(nip19);
-            const {
-                type,
-                data
-            } = decoded;
-            if (type === 'note' || type === 'nevent') {
-                return `?id=${nip19}`;
-            } else if (type === 'npub' || type === 'nprofile') {
-                const pubkey = data.id || data;
-                const npub = window.NostrTools.nip19.npubEncode(pubkey);
-                return `?id=${npub}`;
-            } else if (type === 'naddr') {
-                return `?id=${nip19}`;
-            }
-            return '#';
-        } catch (e) {
-            console.error('Failed to decode nostr link:', e);
-            return '#';
-        }
-    }
-
-    function formatPostContent(content, tags) {
-        let formattedContent = escapeHtml(content);
-        formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-            if (/\.(png|jpe?g|gif|webp|svg|heic|avif)$/i.test(url)) {
-                return `<img src="${url}" alt="post image" class="post-image">`;
-            }
-            return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-        });
-        formattedContent = formattedContent.replace(/nostr:(n(?:pub|event|note|profile|relay|addr)1\S+)/g, (match, nip19) => {
-            const link = createNostrLink(nip19);
-            return `<a href="${link}" class="nostr-link">${match}</a>`;
-        });
-        const customEmojis = tags.filter(t => t[0] === 'emoji');
-        customEmojis.forEach(([_, shortcode, url]) => {
-            const regex = new RegExp(`:${shortcode}:`, 'g');
-            formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
-        });
-        return formattedContent.replace(/\n/g, '<br>');
-    }
-
-    async function fetchProfiles(pubkeys) {
-        if (pubkeys.length === 0) return;
-        const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
-        if (pubkeysToFetch.length === 0) return;
-        // until: 現在 を追加
-        const until = Math.floor(Date.now() / 1000);
-        const profiles = await pool.list(FALLBACK_RELAYS, [{
-            kinds: [0],
-            authors: pubkeysToFetch,
-            until: until,
-            limit: 1 // 最新のプロフィールイベント1件を取得
-        }]);
-        profiles.forEach(p => {
-            try {
-                userProfiles[p.pubkey] = JSON.parse(p.content);
-            } catch (e) {
-                console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
-            }
-        });
-    }
-
-    function createProfileHtml(pubkey, isLink = true) {
-        const profile = userProfiles[pubkey] || {
-            name: 'Unknown',
-            picture: DEFAULT_PROFILE_IMAGE
-        };
-        const npub = window.NostrTools.nip19.npubEncode(pubkey);
-        const profileContentHtml = `
-            <div class="profile">
-                <img src="${profile.picture}" class="profile-image" alt="User profile image">
-                <div>
-                    <span class="profile-name">${escapeHtml(profile.name)}</span>
-                    <span class="profile-nip05">${profile.nip05 ? escapeHtml(profile.nip05) : npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
-                </div>
-            </div>
-        `;
-        if (isLink) {
-            const profileUrl = `?id=${npub}`;
-            return `<a href="${profileUrl}" class="profile-link">${profileContentHtml}</a>`;
-        } else {
-            return profileContentHtml;
-        }
-    }
-
-function renderMainEvent(event) {
-    const date = new Date(event.created_at * 1000).toLocaleString();
-    const client = event.tags.find(t => t[0] === 'client')?. [1] || '';
-
-    let contentHtml;
-    // kindによってコンテンツの描画方法を切り替える
-    if (event.kind === 30023) {
-        // kind:30023の場合、MarkdownをHTMLに変換する
-        // marked.jsを使用
-        contentHtml = window.marked.parse(event.content);
-        // その他の独自処理があればここに追加
-        // nostr:リンクなどをHTMLに変換
-        contentHtml = contentHtml.replace(/nostr:(n(?:pub|event|note|profile|relay|addr)1\S+)/g, (match, nip19) => {
-            const link = createNostrLink(nip19);
-            return `<a href="${link}" class="nostr-link">${match}</a>`;
-        });
-    } else {
-        // kind:1やその他のkindの場合、既存の関数を使用
-        contentHtml = formatPostContent(event.content, event.tags);
-    }
-    
-    const html = `
-        ${createProfileHtml(event.pubkey)}
-        <div class="post-content">${contentHtml}</div>
-        <div class="post-info">
-            <span>${date}</span>
-            ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}
-        </div>
-    `;
-    mainEventContainer.innerHTML = html;
+function goBack() {
+ if (window.history.length > 1) {
+ window.history.back();
+ } else {
+ window.location.href = 'https://ompomz.github.io/flowgazer/index2';
+ }
 }
 
-    function renderReactions(reactions) {
-        const reactionGroups = new Map();
-        reactions.forEach(reaction => {
-            const emoji = reaction.content.trim();
-            if (!reactionGroups.has(emoji)) {
-                reactionGroups.set(emoji, {
-                    count: 0,
-                    pubkeys: new Set()
-                });
-            }
-            const group = reactionGroups.get(emoji);
-            group.count++;
-            group.pubkeys.add(reaction.pubkey);
-        });
+function copyUrl() {
+ navigator.clipboard.writeText(window.location.href)
+ .then(() => {
+ alert('URLがコピーされました！');
+ })
+ .catch(err => {
+ console.error('URLのコピーに失敗しました:', err);
+ alert('URLのコピーに失敗しました。');
+ });
+}
 
-        reactionsList.innerHTML = '';
-        for (const [emoji, group] of reactionGroups.entries()) {
-            const avatarsHtml = Array.from(group.pubkeys).map(pubkey => {
-                const profile = userProfiles[pubkey] || {
-                    picture: DEFAULT_PROFILE_IMAGE
-                };
-                const npub = window.NostrTools.nip19.npubEncode(pubkey);
-                const profileUrl = `?id=${npub}`;
-                return `<a href="${profileUrl}"><img src="${profile.picture}" class="reaction-avatar" alt="reaction user avatar"></a>`;
-            }).join('');
+const mainEventContainer = document.getElementById('main-event');
+const statusElement = document.getElementById('status');
+const reactionsSection = document.getElementById('reactions-section');
+const reactionsList = document.getElementById('reactions-list');
+const relatedEventsSection = document.getElementById('related-events-section');
+const relatedEventsList = document.getElementById('related-events-list');
 
-            const displayedEmoji = emoji === '+' ? '⭐' : emoji;
-            const groupHtml = `
-                <div class="reaction-group">
-                    <span class="reaction-emoji">${displayedEmoji}</span>
-                    <div class="reaction-avatars">${avatarsHtml}</div>
-                </div>
-            `;
-            reactionsList.innerHTML += groupHtml;
-        }
-        reactionsSection.style.display = 'block';
-    }
+const FALLBACK_RELAYS = [
+ 'wss://relay.nostr.band',
+ 'wss://nos.lol',
+];
+const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
+const pool = new window.NostrTools.SimplePool();
+const userProfiles = {};
 
-    function renderRelatedEvents(posts, reposts, quotes) {
-        const allRelatedEvents = [...posts, ...reposts, ...quotes];
-        allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
+FALLBACK_RELAYS.forEach(url => {
+ pool.ensureRelay(url).then(relay => {
+ relay.on('connect', () => console.log(`✅ リレーに接続しました: ${url}`));
+ relay.on('disconnect', () => console.warn(`⚠️ リレーから切断されました: ${url}`));
+ relay.on('error', () => console.error(`❌ リレー接続エラー: ${url}`));
+ }).catch(err => {
+ console.error(`接続プールの設定中にエラーが発生しました: ${url}`, err);
+ });
+});
 
-        relatedEventsList.innerHTML = '';
-        allRelatedEvents.forEach(event => {
-            const date = new Date(event.created_at * 1000).toLocaleString();
-            let postContentHtml = '';
-            let postTypeLabel = '';
+function showStatus(message) {
+  statusElement.textContent = message;
+  if (message) {
+    statusElement.classList.remove('hidden');
+  } else {
+    statusElement.classList.add('hidden');
+  }
+}
 
-            switch (event.kind) {
-                case 1:
-                    postTypeLabel = 'リプライ';
-                    postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
-                    break;
-                case 6:
-                    postTypeLabel = 'リポスト';
-                    const repostUser = userProfiles[event.pubkey] || {
-                        name: 'Unknown'
-                    };
-                    postContentHtml = `<div class="post-content">${escapeHtml(repostUser.name)}さんがリポストしました</div>`;
-                    break;
-                case 16:
-                    postTypeLabel = '引用';
-                    postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
-                    break;
-            }
+function escapeHtml(str) {
+ if (!str) return '';
+ return str.replace(/[&<>"']/g, function(match) {
+ const escape = {
+ '&': '&amp;',
+ '<': '&lt;',
+ '>': '&gt;',
+ '"': '&quot;',
+ "'": '&#39;'
+ };
+ return escape[match];
+ });
+}
 
-            const html = `
-                <div class="related-post-card">
-                    ${createProfileHtml(event.pubkey)}
-                    <div class="post-info">
-                        <span>${date}</span>
-                        <span>${postTypeLabel}</span>
-                    </div>
-                    ${postContentHtml}
-                </div>
-            `;
-            relatedEventsList.innerHTML += html;
-        });
+function createNostrLink(nip19) {
+ try {
+ const decoded = window.NostrTools.nip19.decode(nip19);
+ const {
+ type,
+ data
+ } = decoded;
+ if (type === 'note' || type === 'nevent') {
+ return `?id=${nip19}`;
+ } else if (type === 'npub' || type === 'nprofile') {
+ const pubkey = data.id || data;
+ const npub = window.NostrTools.nip19.npubEncode(pubkey);
+ return `?id=${npub}`;
+ } else if (type === 'naddr') {
+ return `?id=${nip19}`;
+ }
+ return '#';
+ } catch (e) {
+ console.error('Failed to decode nostr link:', e);
+ return '#';
+ }
+}
 
-        relatedEventsSection.style.display = 'block';
-    }
+function formatPostContent(content, tags) {
+ let formattedContent = escapeHtml(content);
+ formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+ if (/\.(png|jpe?g|gif|webp|svg|heic|avif)$/i.test(url)) {
+ return `<img src="${url}" alt="post image" class="post-image">`;
+ }
+ return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+ });
+ formattedContent = formattedContent.replace(/nostr:(n(?:pub|event|note|profile|relay|addr)1\S+)/g, (match, nip19) => {
+ const link = createNostrLink(nip19);
+ return `<a href="${link}" class="nostr-link">${match}</a>`;
+ });
+ const customEmojis = tags.filter(t => t[0] === 'emoji');
+ customEmojis.forEach(([_, shortcode, url]) => {
+ const regex = new RegExp(`:${shortcode}:`, 'g');
+ formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
+ });
+ return formattedContent.replace(/\n/g, '<br>');
+}
 
-    async function renderEventDetail(nostrId) {
-        showStatus('イベントデータを取得中...');
-        try {
-            const decoded = window.NostrTools.nip19.decode(nostrId);
-            const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
-            const until = Math.floor(Date.now() / 1000);
-            let eventId;
-            let filters = {};
+async function fetchProfiles(pubkeys) {
+ if (pubkeys.length === 0) return;
+ const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
+ if (pubkeysToFetch.length === 0) return;
+ const until = Math.floor(Date.now() / 1000);
+ const profiles = await pool.list(FALLBACK_RELAYS, [{
+ kinds: [0],
+ authors: pubkeysToFetch,
+ until: until,
+ limit: 1
+ }]);
+ profiles.forEach(p => {
+ try {
+ userProfiles[p.pubkey] = JSON.parse(p.content);
+ } catch (e) {
+ console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
+ }
+ });
+}
 
-            switch (decoded.type) {
-                case 'note':
-                case 'nevent':
-                    eventId = decoded.data.id || decoded.data;
-                    filters = {
-                        ids: [eventId]
-                    };
-                    break;
-                case 'naddr':
-                    eventId = decoded.data.id;
-                    filters = {
-                        authors: [decoded.data.pubkey],
-                        kinds: [decoded.data.kind],
-                        '#d': [decoded.data.identifier]
-                    };
-                    break;
-                default:
-                    showStatus('エラー: 無効なID形式です。');
-                    return;
-            }
+function createProfileHtml(pubkey, isLink = true) {
+ const profile = userProfiles[pubkey] || {
+ name: 'Unknown',
+ picture: DEFAULT_PROFILE_IMAGE
+ };
+ const npub = window.NostrTools.nip19.npubEncode(pubkey);
+ const profileContentHtml = `
+ <div class="profile">
+ <img src="${profile.picture}" class="profile-image" alt="User profile image">
+ <div>
+ <span class="profile-name">${escapeHtml(profile.name)}</span>
+ <span class="profile-nip05">${profile.nip05 ? escapeHtml(profile.nip05) : npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
+ </div>
+ </div>
+ `;
+ if (isLink) {
+ const profileUrl = `?id=${npub}`;
+ return `<a href="${profileUrl}" class="profile-link">${profileContentHtml}</a>`;
+ } else {
+ return profileContentHtml;
+ }
+}
+function renderMainEvent(event) {
+ const date = new Date(event.created_at * 1000).toLocaleString();
+ const client = event.tags.find(t => t[0] === 'client')?. [1] || '';
+ let contentHtml;
+ if (event.kind === 30023) {
+ contentHtml = window.marked.parse(event.content);
+ contentHtml = contentHtml.replace(/nostr:(n(?:pub|event|note|profile|relay|addr)1\S+)/g, (match, nip19) => {
+ const link = createNostrLink(nip19);
+ return `<a href="${link}" class="nostr-link">${match}</a>`;
+ });
+ } else {
+ contentHtml = formatPostContent(event.content, event.tags);
+ }
+ const html = `
+ ${createProfileHtml(event.pubkey)}
+ <div class="post-content">${contentHtml}</div>
+ <div class="post-info">
+ <span>${date}</span>
+ ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}</div>`;
+mainEventContainer.innerHTML = html;
+}
+function renderReactions(reactions) {
+ const reactionGroups = new Map();
+ reactions.forEach(reaction => {
+ const emoji = reaction.content.trim();
+ if (!reactionGroups.has(emoji)) {
+ reactionGroups.set(emoji, {
+ count: 0,
+ pubkeys: new Set()
+ });
+ }
+ const group = reactionGroups.get(emoji);
+ group.count++;
+ group.pubkeys.add(reaction.pubkey);
+ });
+ reactionsList.innerHTML = '';
+ for (const [emoji, group] of reactionGroups.entries()) {
+ const avatarsHtml = Array.from(group.pubkeys).map(pubkey => {
+ const profile = userProfiles[pubkey] || {
+ picture: DEFAULT_PROFILE_IMAGE
+ };
+ const npub = window.NostrTools.nip19.npubEncode(pubkey);
+ const profileUrl = `?id=${npub}`;
+ return `<a href="${profileUrl}"><img src="${profile.picture}" class="reaction-avatar" alt="reaction user avatar"></a>`;
+ }).join('');
+ const displayedEmoji = emoji === '+' ? '⭐' : emoji;
+ const groupHtml = `
+ <div class="reaction-group">
+ <span class="reaction-emoji">${displayedEmoji}</span>
+ <div class="reaction-avatars">${avatarsHtml}</div>
+ </div>
+ `;
+ reactionsList.innerHTML += groupHtml;
+ }
+ reactionsSection.style.display = 'block';
+}
 
-            console.log(`ℹ️ ID ${nostrId} の取得を開始します。`);
+function renderRelatedEvents(posts, reposts, quotes) {
+ const allRelatedEvents = [...posts, ...reposts, ...quotes];
+ allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
+ relatedEventsList.innerHTML = '';
+ allRelatedEvents.forEach(event => {
+ const date = new Date(event.created_at * 1000).toLocaleString();
+ let postContentHtml = '';
+ let postTypeLabel = '';
+ switch (event.kind) {
+ case 1:
+ postTypeLabel = 'リプライ';
+ postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
+ break;
+ case 6:
+ postTypeLabel = 'リポスト';
+ const repostUser = userProfiles[event.pubkey] || {
+ name: 'Unknown'
+ };
+ postContentHtml = `<div class="post-content">${escapeHtml(repostUser.name)}さんがリポストしました</div>`;
+ break;
+ case 16:
+ postTypeLabel = '引用';
+ postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
+ break;
+ }
+ const html = `
+ <div class="related-post-card">
+ ${createProfileHtml(event.pubkey)}
+ <div class="post-info">
+ <span>${date}</span>
+ <span>${postTypeLabel}</span>
+ </div>
+ ${postContentHtml}
+ </div>
+ `;
+ relatedEventsList.innerHTML += html;
+ });
+ relatedEventsSection.style.display = 'block';
+}
 
-            const mainEventPromise = pool.get(relays, { ...filters,
-                until: until,
-                limit: 1
-            });
-            const relatedEventsPromise = pool.list(relays, [{
-                '#e': [eventId],
-                kinds: [1, 6, 7, 16],
-                until: until
-            }]); // ここを修正
+async function renderEventDetail(nostrId) {
+ showStatus('イベントデータを取得中...');
+ try {
+ const decoded = window.NostrTools.nip19.decode(nostrId);
+ const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+ const until = Math.floor(Date.now() / 1000);
+ let eventId;
+ let filters = {};
+ switch (decoded.type) {
+ case 'note':
+ case 'nevent':
+ eventId = decoded.data.id || decoded.data;
+ filters = {
+ ids: [eventId]
+ };
+ break;
+ case 'naddr':
+ eventId = decoded.data.id;
+ filters = {
+ authors: [decoded.data.pubkey],
+ kinds: [decoded.data.kind],
+ '#d': [decoded.data.identifier]
+ };
+ break;
+ default:
+ showStatus('エラー: 無効なID形式です。');
+ return;
+ }
+ console.log(`ℹ️ ID ${nostrId} の取得を開始します。`);
+ console.log(' - フィルター:', filters);
+ console.log(' - 使用リレー:', relays);
+ const mainEventPromise = pool.get(relays, {
+ ...filters,
+ until: until,
+ limit: 1
+ });
+ const relatedEventsPromise = pool.list(relays, [{
+ '#e': [eventId],
+ kinds: [1, 6, 7, 16],
+ until: until
+ }]);
+ const [mainEvent, relatedEvents] = await Promise.all([mainEventPromise, relatedEventsPromise]);
+ if (!mainEvent) {
+ console.warn('⚠️ メインイベントが見つかりませんでした。');
+ showStatus('イベントが見つかりませんでした');
+ return;
+ }
+ console.log('✅ メインイベント取得成功:', {
+ id: mainEvent.id.substring(0, 8) + '...',
+ kind: mainEvent.kind,
+ author: mainEvent.pubkey.substring(0, 8) + '...'
+ });
+ if (relatedEvents.length > 0) {
+ console.log(`✅ 関連イベントを ${relatedEvents.length} 件取得しました。`);
+ } else {
+ console.warn('⚠️ 関連イベントは見つかりませんでした。');
+ }
+ const pubkeysToFetch = new Set();
+ pubkeysToFetch.add(mainEvent.pubkey);
+ relatedEvents.forEach(e => pubkeysToFetch.add(e.pubkey));
+ console.log(`ℹ️ プロフィールをフェッチするpubkey: ${Array.from(pubkeysToFetch).length}件`);
+ await fetchProfiles(Array.from(pubkeysToFetch));
+ console.log(`✅ ${Object.keys(userProfiles).length}件のプロフィールを取得しました。`);
+ renderMainEvent(mainEvent);
+ const reactions = relatedEvents.filter(e => e.kind === 7);
+ const posts = relatedEvents.filter(e => e.kind === 1);
+ const reposts = relatedEvents.filter(e => e.kind === 6);
+ const quotes = relatedEvents.filter(e => e.kind === 16);
+ console.log(` - リアクション (kind:7): ${reactions.length}件`);
+ console.log(` - リプライ (kind:1): ${posts.length}件`);
+ console.log(` - リポスト (kind:6): ${reposts.length}件`);
+ console.log(` - 引用 (kind:16): ${quotes.length}件`);
+ if (reactions.length > 0) renderReactions(reactions);
+ if (posts.length > 0 || reposts.length > 0 || quotes.length > 0) {
+ renderRelatedEvents(posts, reposts, quotes);
+ }
+ showStatus('');
+ console.log('✅ すべての処理が完了しました。');
+ } catch (err) {
+ console.error('❌ イベントの取得中にエラーが発生しました:', err);
+ showStatus('イベントの取得中にエラーが発生しました。');
+ } finally { }
+}
 
-            const [mainEvent, relatedEvents] = await Promise.all([mainEventPromise, relatedEventsPromise]);
-
-            if (!mainEvent) {
-                showStatus('イベントが見つかりませんでした');
-                return;
-            }
-
-            const pubkeysToFetch = new Set();
-            pubkeysToFetch.add(mainEvent.pubkey);
-            relatedEvents.forEach(e => pubkeysToFetch.add(e.pubkey));
-
-            await fetchProfiles(Array.from(pubkeysToFetch));
-            renderMainEvent(mainEvent);
-
-            const reactions = relatedEvents.filter(e => e.kind === 7);
-            const posts = relatedEvents.filter(e => e.kind === 1);
-            const reposts = relatedEvents.filter(e => e.kind === 6);
-            const quotes = relatedEvents.filter(e => e.kind === 16);
-
-            if (reactions.length > 0) renderReactions(reactions);
-            if (posts.length > 0 || reposts.length > 0 || quotes.length > 0) {
-                renderRelatedEvents(posts, reposts, quotes);
-            }
-
-            showStatus('');
-            console.log('✅ すべての処理が完了しました。');
-
-        } catch (err) {
-            console.error('❌ イベントの取得中にエラーが発生しました:', err);
-            showStatus('イベントの取得中にエラーが発生しました。');
-        } finally {
-            pool.close(FALLBACK_RELAYS);
-        }
-    }
-
-    async function renderProfileDetail(nostrId) {
-        showStatus('プロフィール情報を取得中...');
-        try {
-            const decoded = window.NostrTools.nip19.decode(nostrId);
-            if (decoded.type !== 'npub' && decoded.type !== 'nprofile') {
-                showStatus('エラー: 無効なnpubまたはnprofile形式です。');
-                return;
-            }
-
-            const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
-            const pubkey = decoded.data.id || decoded.data;
-            const until = Math.floor(Date.now() / 1000);
-
-            const profileEvent = await pool.get(relays, {
-                kinds: [0],
-                authors: [pubkey],
-                until: until,
-                limit: 1
-            });
-
-            if (!profileEvent) {
-                showStatus('プロフィールが見つかりませんでした。');
-                return;
-            }
-
-            const profile = JSON.parse(profileEvent.content);
-            const html = `
-                <div class="profile-card">
-                    <img src="${profile.picture}" alt="Profile Picture">
-                    <h2>${escapeHtml(profile.name)}</h2>
-                    <p class="npub">${window.NostrTools.nip19.npubEncode(pubkey)}</p>
-                    <p class="about">${escapeHtml(profile.about || '')}</p>
-                    <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
-                </div>
-            `;
-
-            mainEventContainer.innerHTML = html;
-            showStatus('');
-
-        } catch (err) {
-            console.error('プロフィール取得中にエラー:', err);
-            showStatus('プロフィールの取得中にエラーが発生しました。');
-        } finally {
-            pool.close(FALLBACK_RELAYS);
-        }
-    }
-
-    function renderInputForm() {
-        mainEventContainer.innerHTML = `
-            <div class="input-form-container">
-                <p class="form-title">イベントまたはユーザーのNostr IDを入力してください</p>
-                <form id="nostr-form" class="nostr-form">
-                    <input type="text" id="nostr-id-input" placeholder="nevent1..., npub1..." required class="form-input">
-                    <button type="submit" class="form-button">表示</button>
-                </form>
-            </div>
-        `;
-        const form = document.getElementById('nostr-form');
-        form.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const input = document.getElementById('nostr-id-input').value.trim();
-            if (input.startsWith('note1') || input.startsWith('nevent1') || input.startsWith('naddr1')) {
-                window.location.href = `?id=${input}`;
-            } else if (input.startsWith('npub1') || input.startsWith('nprofile1')) {
-                window.location.href = `?id=${input}`;
-            } else {
-                alert('有効なNostr ID (note1, nevent1, naddr1, npub1, nprofile1) を入力してください。');
-            }
-        });
-    }
-
-    window.onload = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('id');
-        if (id) {
-            if (id.startsWith('npub1') || id.startsWith('nprofile1')) {
-                renderProfileDetail(id);
-            } else if (id.startsWith('note1') || id.startsWith('nevent1') || id.startsWith('naddr1')) {
-                renderEventDetail(id);
-            } else {
-                showStatus('エラー: 無効なNostr ID形式です。');
-                renderInputForm();
-            }
-        } else {
-            renderInputForm();
-        }
-    };
+async function fetchProfiles(pubkeys) {
+ if (pubkeys.length === 0) return;
+ const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
+ if (pubkeysToFetch.length > 0) {
+ console.log(`ℹ️ ${pubkeysToFetch.length}件の新しいプロフィールイベント (kind:0) をフェッチします。`);
+ }
+ if (pubkeysToFetch.length === 0) return;
+ const until = Math.floor(Date.now() / 1000);
+ const profiles = await pool.list(FALLBACK_RELAYS, [{
+ kinds: [0],
+ authors: pubkeysToFetch,
+ until: until
+ }]);
+ console.log(`✅ ${profiles.length}件のプロフィールイベントを取得しました。`);
+ profiles.forEach(p => {
+ try {
+ userProfiles[p.pubkey] = JSON.parse(p.content);
+ } catch (e) {
+ console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
+ }
+ });
+}
+async function renderProfileDetail(nostrId) {
+ showStatus('プロフィール情報を取得中...');
+ try {
+ const decoded = window.NostrTools.nip19.decode(nostrId);
+ if (decoded.type !== 'npub' && decoded.type !== 'nprofile') {
+ showStatus('エラー: 無効なnpubまたはnprofile形式です。');
+ return;
+ }
+ const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+ const pubkey = decoded.data.id || decoded.data;
+ const until = Math.floor(Date.now() / 1000);
+ const profileEvent = await pool.get(relays, {
+ kinds: [0],
+ authors: [pubkey],
+ until: until,
+ limit: 1
+ });
+ if (!profileEvent) {
+ showStatus('プロフィールが見つかりませんでした。');
+ return;
+ }
+ const profile = JSON.parse(profileEvent.content);
+ const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : ''; 
+ const html = `
+ <div class="profile-card">
+ <img src="${profile.picture}" alt="Profile Picture">
+ <h2>${escapeHtml(profile.name)}</h2>
+ <p class="npub" style="word-wrap: break-word;">${window.NostrTools.nip19.npubEncode(pubkey)}</p>
+ <p class="about">${aboutText}</p>
+ <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
+ </div>
+ `;
+ mainEventContainer.innerHTML = html;
+ showStatus('');
+ } catch (err) {
+ console.error('プロフィール取得中にエラー:', err);
+ showStatus('プロフィールの取得中にエラーが発生しました。');
+ } finally { }
+}
+function renderInputForm() {
+ mainEventContainer.innerHTML = `
+ <div class="input-form-container">
+ <p class="form-title">イベントまたはユーザーのNostr IDを入力してください</p>
+ <form id="nostr-form" class="nostr-form">
+ <input type="text" id="nostr-id-input" placeholder="nevent1..., npub1..." required class="form-input">
+ <button type="submit" class="form-button">表示</button>
+ </form>
+ </div>
+ `;
+ const form = document.getElementById('nostr-form');
+ form.addEventListener('submit', (e) => {
+ e.preventDefault();
+ const input = document.getElementById('nostr-id-input').value.trim();
+ if (input.startsWith('note1') || input.startsWith('nevent1') || input.startsWith('naddr1')) {
+ window.location.href = `?id=${input}`;
+ } else if (input.startsWith('npub1') || input.startsWith('nprofile1')) {
+ window.location.href = `?id=${input}`;
+ } else {
+ alert('有効なNostr ID (note1, nevent1, naddr1, npub1, nprofile1) を入力してください。');
+ }
+ });
+}
+window.onload = () => {
+ const urlParams = new URLSearchParams(window.location.search);
+ const id = urlParams.get('id');
+ if (id) {
+ if (id.startsWith('npub1') || id.startsWith('nprofile1')) {
+ renderProfileDetail(id);
+ } else if (id.startsWith('note1') || id.startsWith('nevent1') || id.startsWith('naddr1')) {
+ renderEventDetail(id);
+ } else {
+ showStatus('エラー: 無効なNostr ID形式です。');
+ renderInputForm();
+ }
+ } else {
+ renderInputForm();
+ }
+};
 </script>
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
