@@ -17,7 +17,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .container button:hover { background-color: #ffa347; }
 .header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 0px solid #ddd; }
 #main-event { padding: 1rem 0; border-bottom: 1px dashed #ddd; }
-#status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; text-align: center; }
+#status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; }
 .section-header { margin: 1rem 0 0.5rem; font-size: 1rem; color: #444; }
 .reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
 .reaction-group { display: flex; align-items: center; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
@@ -41,8 +41,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .post-content img { max-width: 100%; height: auto; display: block; margin-top: 0.5rem; }
 .post-content img.custom-emoji { vertical-align: middle; display: inline-block; height: 1.2rem !important; }
 .post-content ul, .post-content ol { list-style-position: inside; }
-.nostr-form { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; }
-.form-input { width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.nostr-form { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; }
+.form-input { flex: 1; min-width: 0; width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.form-button { flex-shrink: 0; }
 .footer-section { text-align: center; padding: 1rem 0; }
 </style>
 </head>
