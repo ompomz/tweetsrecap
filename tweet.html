@@ -116,12 +116,12 @@ FALLBACK_RELAYS.forEach(url => {
 });
 
 function showStatus(message) {
-  statusElement.textContent = message;
-  if (message) {
-    statusElement.classList.remove('hidden');
-  } else {
-    statusElement.classList.add('hidden');
-  }
+ statusElement.textContent = message;
+ if (message) {
+ statusElement.classList.remove('hidden');
+ } else {
+ statusElement.classList.add('hidden');
+ }
 }
 
 function escapeHtml(str) {
@@ -165,7 +165,7 @@ function formatPostContent(content, tags) {
  let formattedContent = escapeHtml(content);
  formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
  if (/\.(png|jpe?g|gif|webp|svg|heic|avif)$/i.test(url)) {
- return `<img src="${url}" alt="post image" class="post-image">`;
+ return `<a href="${url}" target="_blank" rel="noopener noreferrer"><img src="${url}" alt="post image" class="post-image"></a>`;
  }
  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
  });
