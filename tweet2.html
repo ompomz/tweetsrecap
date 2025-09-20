@@ -182,24 +182,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  }
 
  async function fetchProfiles(pubkeys) {
- if (pubkeys.length === 0) return;
- const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
- if (pubkeysToFetch.length === 0) return;
- const until = Math.floor(Date.now() / 1000);
- const profiles = await pool.list(FALLBACK_RELAYS, [{
- kinds: [0],
- authors: pubkeysToFetch,
- until: until,
- limit: 1
- }]);
- profiles.forEach(p => {
- try {
- userProfiles[p.pubkey] = JSON.parse(p.content);
- } catch (e) {
- console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
- }
- });
- }
+  if (pubkeys.length === 0) return;
+  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
+  if (pubkeysToFetch.length > 0) {
+    console.log(`ℹ️ ${pubkeysToFetch.length}件の新しいプロフィールイベント (kind:0) をフェッチします。`);
+  }
+  if (pubkeysToFetch.length === 0) return;
+  const until = Math.floor(Date.now() / 1000);
+  const profiles = await pool.list(FALLBACK_RELAYS, [{
+    kinds: [0],
+    authors: pubkeysToFetch,
+    until: until
+  }]);
+  console.log(`✅ ${profiles.length}件のプロフィールイベントを取得しました。`);
+  profiles.forEach(p => {
+    try {
+      userProfiles[p.pubkey] = JSON.parse(p.content);
+    } catch (e) {
+      console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
+    }
+  });
+}
 
  function createProfileHtml(pubkey, isLink = true) {
  const profile = userProfiles[pubkey] || {
@@ -429,29 +432,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  console.error('❌ イベントの取得中にエラーが発生しました:', err);
  showStatus('イベントの取得中にエラーが発生しました。');
  } finally {}
- }
-
- async function fetchProfiles(pubkeys) {
- if (pubkeys.length === 0) return;
- const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
- if (pubkeysToFetch.length > 0) {
- console.log(`ℹ️ ${pubkeysToFetch.length}件の新しいプロフィールイベント (kind:0) をフェッチします。`);
- }
- if (pubkeysToFetch.length === 0) return;
- const until = Math.floor(Date.now() / 1000);
- const profiles = await pool.list(FALLBACK_RELAYS, [{
- kinds: [0],
- authors: pubkeysToFetch,
- until: until
- }]);
- console.log(`✅ ${profiles.length}件のプロフィールイベントを取得しました。`);
- profiles.forEach(p => {
- try {
- userProfiles[p.pubkey] = JSON.parse(p.content);
- } catch (e) {
- console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
- }
- });
  }
 
  async function renderProfileDetail(nostrId) {
