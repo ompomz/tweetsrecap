@@ -220,28 +220,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  });
 }
 
- function createProfileHtml(pubkey, isLink = true) {
- const profile = userProfiles[pubkey] || {
- name: 'Unknown',
- picture: DEFAULT_PROFILE_IMAGE
- };
- const npub = window.NostrTools.nip19.npubEncode(pubkey);
- const profileContentHtml = `
- <div class="profile">
- <img src="${profile.picture}" class="profile-image" alt="User profile image">
- <div>
- <span class="profile-name">${escapeHtml(profile.name)}</span>
- <span class="profile-nip05">${profile.nip05 ? escapeHtml(profile.nip05) : npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
- </div>
- </div>
- `;
- if (isLink) {
- const profileUrl = `?id=${npub}`;
- return `<a href="${profileUrl}" class="profile-link">${profileContentHtml}</a>`;
- } else {
- return profileContentHtml;
- }
- }
+function createProfileHtml(pubkey, isLink = true) {
+  const profile = userProfiles[pubkey] || {};
+  const profilePicture = (profile.picture && profile.picture.trim() !== '') ? profile.picture : DEFAULT_PROFILE_IMAGE;
+  const npub = window.NostrTools.nip19.npubEncode(pubkey);
+  const profileContentHtml = `
+    <div class="profile">
+      <img src="${profilePicture}" class="profile-image" alt="User profile image">
+      <div>
+        <span class="profile-name">${escapeHtml(profile.name || 'Unknown')}</span>
+        <span class="profile-nip05">${profile.nip05 ? escapeHtml(profile.nip05) : npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
+      </div>
+    </div>
+  `;
+  if (isLink) {
+    const profileUrl = `?id=${npub}`;
+    return `<a href="${profileUrl}" class="profile-link">${profileContentHtml}</a>`;
+  } else {
+    return profileContentHtml;
+  }
+}
  
  function renderMainEvent(event) {
  const date = new Date(event.created_at * 1000).toLocaleString();
