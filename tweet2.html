@@ -51,35 +51,34 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 <body>
 <div id="header-placeholder"></div>
 <div class="container">
-<div class="header-section">
-<button onclick="goBack()">もどる</button>
-<button onclick="copyUrl()">シェア</button>
-</div>
-<div id="main-event">
-</div>
-<p id="status" class="hidden"></p>
-<div id="reactions-section" style="display: none;">
-<div id="reactions-list" class="reactions-list"></div>
-</div>
-<div id="related-events-section" style="display: none;">
-<div id="related-events-list" class="related-posts"></div>
-</div>
-<div class="footer-section">
-<button onclick="goBack()">もどる</button>
-</div>
+ <div class="header-section">
+ <button onclick="goBack()">もどる</button>
+ <button onclick="copyUrl()">シェア</button>
+ </div>
+ <div id="main-event"></div>
+ <p id="status" class="hidden"></p>
+ <div id="reactions-section" style="display: none;">
+ <div id="reactions-list" class="reactions-list"></div>
+ </div>
+ <div id="related-events-section" style="display: none;">
+ <div id="related-events-list" class="related-posts"></div>
+ </div>
+ <div class="footer-section">
+ <button onclick="goBack()">もどる</button>
+ </div>
 </div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-function goBack() {
+ function goBack() {
  if (window.history.length > 1) {
  window.history.back();
  } else {
  window.location.href = 'https://ompomz.github.io/flowgazer/index2';
  }
-}
+ }
 
-function copyUrl() {
+ function copyUrl() {
  navigator.clipboard.writeText(window.location.href)
  .then(() => {
  alert('URLがコピーされました！');
@@ -88,24 +87,24 @@ function copyUrl() {
  console.error('URLのコピーに失敗しました:', err);
  alert('URLのコピーに失敗しました。');
  });
-}
+ }
 
-const mainEventContainer = document.getElementById('main-event');
-const statusElement = document.getElementById('status');
-const reactionsSection = document.getElementById('reactions-section');
-const reactionsList = document.getElementById('reactions-list');
-const relatedEventsSection = document.getElementById('related-events-section');
-const relatedEventsList = document.getElementById('related-events-list');
+ const mainEventContainer = document.getElementById('main-event');
+ const statusElement = document.getElementById('status');
+ const reactionsSection = document.getElementById('reactions-section');
+ const reactionsList = document.getElementById('reactions-list');
+ const relatedEventsSection = document.getElementById('related-events-section');
+ const relatedEventsList = document.getElementById('related-events-list');
 
-const FALLBACK_RELAYS = [
+ const FALLBACK_RELAYS = [
  'wss://relay.nostr.band',
  'wss://nos.lol',
-];
-const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
-const pool = new window.NostrTools.SimplePool();
-const userProfiles = {};
+ ];
+ const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
+ const pool = new window.NostrTools.SimplePool();
+ const userProfiles = {};
 
-FALLBACK_RELAYS.forEach(url => {
+ FALLBACK_RELAYS.forEach(url => {
  pool.ensureRelay(url).then(relay => {
  relay.on('connect', () => console.log(`✅ リレーに接続しました: ${url}`));
  relay.on('disconnect', () => console.warn(`⚠️ リレーから切断されました: ${url}`));
@@ -113,18 +112,18 @@ FALLBACK_RELAYS.forEach(url => {
  }).catch(err => {
  console.error(`接続プールの設定中にエラーが発生しました: ${url}`, err);
  });
-});
+ });
 
-function showStatus(message) {
+ function showStatus(message) {
  statusElement.textContent = message;
  if (message) {
  statusElement.classList.remove('hidden');
  } else {
  statusElement.classList.add('hidden');
  }
-}
+ }
 
-function escapeHtml(str) {
+ function escapeHtml(str) {
  if (!str) return '';
  return str.replace(/[&<>"']/g, function(match) {
  const escape = {
@@ -136,9 +135,9 @@ function escapeHtml(str) {
  };
  return escape[match];
  });
-}
+ }
 
-function createNostrLink(nip19) {
+ function createNostrLink(nip19) {
  try {
  const decoded = window.NostrTools.nip19.decode(nip19);
  const {
@@ -159,9 +158,9 @@ function createNostrLink(nip19) {
  console.error('Failed to decode nostr link:', e);
  return '#';
  }
-}
+ }
 
-function formatPostContent(content, tags) {
+ function formatPostContent(content, tags) {
  let formattedContent = escapeHtml(content);
  formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
  if (/\.(png|jpe?g|gif|webp|svg|heic|avif)$/i.test(url)) {
@@ -179,9 +178,9 @@ function formatPostContent(content, tags) {
  formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
  });
  return formattedContent.replace(/\n/g, '<br>');
-}
+ }
 
-async function fetchProfiles(pubkeys) {
+ async function fetchProfiles(pubkeys) {
  if (pubkeys.length === 0) return;
  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
  if (pubkeysToFetch.length === 0) return;
@@ -199,9 +198,9 @@ async function fetchProfiles(pubkeys) {
  console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
  }
  });
-}
+ }
 
-function createProfileHtml(pubkey, isLink = true) {
+ function createProfileHtml(pubkey, isLink = true) {
  const profile = userProfiles[pubkey] || {
  name: 'Unknown',
  picture: DEFAULT_PROFILE_IMAGE
@@ -222,10 +221,11 @@ function createProfileHtml(pubkey, isLink = true) {
  } else {
  return profileContentHtml;
  }
-}
-function renderMainEvent(event) {
+ }
+ 
+ function renderMainEvent(event) {
  const date = new Date(event.created_at * 1000).toLocaleString();
- const client = event.tags.find(t => t[0] === 'client')?. [1] || '';
+ const client = event.tags.find(t => t[0] === 'client')?.[1] || '';
  let contentHtml;
  if (event.kind === 30023) {
  contentHtml = window.marked.parse(event.content);
@@ -241,15 +241,22 @@ function renderMainEvent(event) {
  <div class="post-content">${contentHtml}</div>
  <div class="post-info">
  <span>${date}</span>
- ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}</div>`;
-mainEventContainer.innerHTML = html;
-}
-function renderReactions(reactions, customEmojiMap) {
+ ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}
+ </div>
+ `;
+ mainEventContainer.innerHTML = html;
+ }
+
+ function renderReactions(reactions, customEmojiMap) {
+ console.log("カスタム絵文字マップ:", customEmojiMap);
  const reactionGroups = new Map();
  reactions.forEach(reaction => {
  const emoji = reaction.content.trim();
  if (!reactionGroups.has(emoji)) {
- reactionGroups.set(emoji, { count: 0, pubkeys: new Set() });
+ reactionGroups.set(emoji, {
+ count: 0,
+ pubkeys: new Set()
+ });
  }
  const group = reactionGroups.get(emoji);
  group.count++;
@@ -258,15 +265,19 @@ function renderReactions(reactions, customEmojiMap) {
  reactionsList.innerHTML = '';
  for (const [emoji, group] of reactionGroups.entries()) {
  const avatarsHtml = Array.from(group.pubkeys).map(pubkey => {
- const profile = userProfiles[pubkey] || { picture: DEFAULT_PROFILE_IMAGE };
+ const profile = userProfiles[pubkey] || {
+ picture: DEFAULT_PROFILE_IMAGE
+ };
  const npub = window.NostrTools.nip19.npubEncode(pubkey);
  const profileUrl = `?id=${npub}`;
  return `<a href="${profileUrl}"><img src="${profile.picture}" class="reaction-avatar" alt="reaction user avatar"></a>`;
  }).join('');
-let displayedEmojiHtml;
+ let displayedEmojiHtml;
  const emojiUrl = customEmojiMap.get(emoji);
+ console.log("リアクションの絵文字:", emoji, "URL:", emojiUrl);
 
- if (emojiUrl) { displayedEmojiHtml = `<img src="${emojiUrl}" alt="${emoji}" class="reaction-custom-emoji">`;
+ if (emojiUrl) {
+ displayedEmojiHtml = `<img src="${emojiUrl}" alt="${emoji}" class="reaction-custom-emoji">`;
  } else {
  const displayedEmoji = emoji === '+' ? '⭐' : emoji;
  displayedEmojiHtml = `<span class="reaction-emoji">${displayedEmoji}</span>`;
@@ -280,8 +291,9 @@ let displayedEmojiHtml;
  reactionsList.innerHTML += groupHtml;
  }
  reactionsSection.style.display = 'block';
-}
-function renderRelatedEvents(posts, reposts, quotes) {
+ }
+
+ function renderRelatedEvents(posts, reposts, quotes) {
  const allRelatedEvents = [...posts, ...reposts, ...quotes];
  allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
  relatedEventsList.innerHTML = '';
@@ -319,9 +331,9 @@ function renderRelatedEvents(posts, reposts, quotes) {
  relatedEventsList.innerHTML += html;
  });
  relatedEventsSection.style.display = 'block';
-}
+ }
 
-async function renderEventDetail(nostrId) {
+ async function renderEventDetail(nostrId) {
  showStatus('イベントデータを取得中...');
  try {
  const decoded = window.NostrTools.nip19.decode(nostrId);
@@ -407,10 +419,10 @@ async function renderEventDetail(nostrId) {
  } catch (err) {
  console.error('❌ イベントの取得中にエラーが発生しました:', err);
  showStatus('イベントの取得中にエラーが発生しました。');
- } finally { }
-}
+ } finally {}
+ }
 
-async function fetchProfiles(pubkeys) {
+ async function fetchProfiles(pubkeys) {
  if (pubkeys.length === 0) return;
  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
  if (pubkeysToFetch.length > 0) {
@@ -431,8 +443,9 @@ async function fetchProfiles(pubkeys) {
  console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
  }
  });
-}
-async function renderProfileDetail(nostrId) {
+ }
+
+ async function renderProfileDetail(nostrId) {
  showStatus('プロフィール情報を取得中...');
  try {
  const decoded = window.NostrTools.nip19.decode(nostrId);
@@ -454,7 +467,7 @@ async function renderProfileDetail(nostrId) {
  return;
  }
  const profile = JSON.parse(profileEvent.content);
- const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : ''; 
+ const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : '';
  const html = `
  <div class="profile-card">
  <img src="${profile.picture}" alt="Profile Picture">
@@ -469,9 +482,10 @@ async function renderProfileDetail(nostrId) {
  } catch (err) {
  console.error('プロフィール取得中にエラー:', err);
  showStatus('プロフィールの取得中にエラーが発生しました。');
- } finally { }
-}
-function renderInputForm() {
+ } finally {}
+ }
+
+ function renderInputForm() {
  mainEventContainer.innerHTML = `
  <div class="input-form-container">
  <p class="form-title">イベントまたはユーザーのNostr IDを入力してください</p>
@@ -493,8 +507,9 @@ function renderInputForm() {
  alert('有効なNostr ID (note1, nevent1, naddr1, npub1, nprofile1) を入力してください。');
  }
  });
-}
-window.onload = () => {
+ }
+
+ window.onload = () => {
  const urlParams = new URLSearchParams(window.location.search);
  const id = urlParams.get('id');
  if (id) {
@@ -509,7 +524,7 @@ window.onload = () => {
  } else {
  renderInputForm();
  }
-};
+ };
 </script>
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
