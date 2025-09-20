@@ -385,6 +385,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  customEmojis.forEach(([_, shortcode, url]) => {
  customEmojiMap.set(`:${shortcode}:`, url);
  });
+ const reactionEmojis = relatedEvents
+ .filter(e => e.kind === 7)
+ .flatMap(e => e.tags.filter(t => t[0] === 'emoji'));
+ reactionEmojis.forEach(([_, shortcode, url]) => {
+ if (!customEmojiMap.has(`:${shortcode}:`)) {
+ customEmojiMap.set(`:${shortcode}:`, url);
+ }
+ });
  console.log('✅ メインイベント取得成功:', {
  id: mainEvent.id.substring(0, 8) + '...',
  kind: mainEvent.kind,
