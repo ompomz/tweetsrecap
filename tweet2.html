@@ -445,34 +445,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
  const pubkey = decoded.data.id || decoded.data;
  const until = Math.floor(Date.now() / 1000);
- const profileEvent = await pool.get(relays, {
- kinds: [0],
- authors: [pubkey],
- until: until,
- limit: 1
- });
+ const profileEvent = await pool.get(relays, { kinds: [0], authors: [pubkey], until: until, limit: 1 });
+
  if (!profileEvent) {
  showStatus('プロフィールが見つかりませんでした。');
  return;
  }
+
  const profile = JSON.parse(profileEvent.content);
- const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : '';
+ const npub = window.NostrTools.nip19.npubEncode(pubkey);
+ const aboutHtml = profile.about ? escapeHtml(profile.about).replace(/(https?:\/\/[^\s]+)/g, (url) => {
+ return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+ }).replace(/\n/g, '<br>') : '';
+
  const html = `
  <div class="profile-card">
- <img src="${profile.picture}" alt="Profile Picture">
- <h2>${escapeHtml(profile.name)}</h2>
- <p class="npub" style="word-wrap: break-word;">${window.NostrTools.nip19.npubEncode(pubkey)}</p>
- <p class="about">${aboutText}</p>
+ <div class="profile-header">
+ <img src="${profile.picture || DEFAULT_PROFILE_IMAGE}" alt="Profile Picture" class="profile-image">
+ <div class="profile-info-container">
+ <h2 class="profile-name">${escapeHtml(profile.name)}</h2>
+ <div class="npub-container">
+ <span id="npub-text" class="npub-text">${npub}</span>
+ <svg id="copy-npub-icon" class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+ <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+ <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+ </svg>
+ </div>
  <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
+ </div>
+ </div>
+ <p class="about-text">${aboutHtml}</p>
  </div>
  `;
  mainEventContainer.innerHTML = html;
+ const copyIcon = document.getElementById('copy-npub-icon');
+ const npubText = document.getElementById('npub-text');
+ copyIcon.onclick = async () => {
+ try {
+ await navigator.clipboard.writeText(npub);
+ alert('npubがクリップボードにコピーされました！');
+ } catch (err) {
+ console.error('npubのコピーに失敗しました:', err);
+ alert('npubのコピーに失敗しました。');
+ }
+ };
+
  showStatus('');
  } catch (err) {
  console.error('プロフィール取得中にエラー:', err);
  showStatus('プロフィールの取得中にエラーが発生しました。');
- } finally {}
  }
+}
 
  function renderInputForm() {
  mainEventContainer.innerHTML = `
