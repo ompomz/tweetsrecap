@@ -462,29 +462,34 @@ async function renderProfileDetail(nostrId) {
     const profile = JSON.parse(profileEvent.content);
     const npub = window.NostrTools.nip19.npubEncode(pubkey);
 
-function formatAboutContent(content, tags) {
+   function formatAboutContent(content, tags) {
   if (!content) return '';
-
+  // ① まずはHTML特殊文字をエスケープ
+  let formattedContent = escapeHtml(content);
+  // ② emojiタグからカスタム絵文字マップを生成
   const customEmojis = tags.filter(t => t[0] === 'emoji');
   const customEmojiMap = new Map();
   customEmojis.forEach(([_, shortcode, url]) => {
-    customEmojiMap.set(`:${shortcode}:`, url);
-  });
- 
-  let formattedContent = escapeHtml(content);
-  customEmojiMap.forEach((url, shortcode) => {
+    // ショートコードをキーに、画像HTMLを値とするマップを作成
+    const imageTag = `<img src="${url}" alt="${shortcode}" class="custom-emoji">`;
+    customEmojiMap.set(`:${shortcode}:`, imageTag);
+  });  
+  // ③ カスタム絵文字のショートコードを、マップ内のHTMLに置き換え
+  customEmojiMap.forEach((imageTag, shortcode) => {
+    // 正規表現で、正確にショートコード（例：:monokashiwa:）をマッチさせる
     const regex = new RegExp(shortcode.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
-    formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
+    formattedContent = formattedContent.replace(regex, imageTag);
   });
-
+  // ④ URLをリンク化
+  // ただし、すでにimgタグの一部となっているURLはスキップする
   formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-    if (formattedContent.includes(`<img src="${url}"`)) {
-        return url;
+    if (url.includes('imgur.com')) { // カスタム絵文字のURLかどうかを簡易的にチェック
+      return url;
     }
     return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
   });
- 
- return formattedContent.replace(/\n/g, '<br>');
+  // ⑤ 改行を<br>に変換
+  return formattedContent.replace(/\n/g, '<br>');
 }
     const aboutHtml = formatAboutContent(profile.about, profileEvent.tags);
 
