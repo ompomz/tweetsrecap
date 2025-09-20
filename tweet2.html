@@ -35,8 +35,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .profile-image { width: 2rem; height: 2rem; border-radius: 50%; object-fit: cover; }
 .profile-name { font-weight: bold; font-size: 1rem; color: #444; }
 .profile-nip05, .profile-npub { font-size: 0.8rem; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
-.profile-card { text-align: center; padding: 1rem; background-color: #fff; border-radius: 8px; border: 1px solid #ddd; }
 .profile-card img { width: 6rem; height: 6rem; border-radius: 50%; object-fit: cover; margin: 0.5rem 0rem; border: 2px solid #ffb366; }
+.profile-card { display: flex; flex-direction: column; gap: 1rem; padding: 1rem; background-color: #fff; border-radius: 8px; border: 1px solid #ddd; }
+.profile-header { display: flex; align-items: flex-start; gap: 1rem; }
+.profile-info-container { flex: 1; display: flex; flex-direction: column; gap: 0.25rem; }
+.npub-container { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; word-break: break-all; }
+.copy-icon { cursor: pointer; transition: opacity 0.2s ease; }
+.copy-icon:hover { opacity: 0.4; }
+.about-text { font-size: 0.9rem; line-height: 1.5; color: #333; }
+.about-text a { color: #66b3ff; text-decoration: underline; }
+.about-text a:hover { color: #4da6ff; }
 .post-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #999; }
 .post-content { margin: 0.5rem 0rem; line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
 .post-content img { max-width: 15rem; max-height: 15rem; height: auto; display: block; margin: 0.5rem 0rem; }
@@ -442,22 +450,41 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  showStatus('エラー: 無効なnpubまたはnprofile形式です。');
  return;
  }
- const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+ const relays = (decoded.data.relays && decoded.data.relays.length > 0)
+ ? decoded.data.relays
+ : FALLBACK_RELAYS;
  const pubkey = decoded.data.id || decoded.data;
  const until = Math.floor(Date.now() / 1000);
- const profileEvent = await pool.get(relays, { kinds: [0], authors: [pubkey], until: until, limit: 1 });
-
+ const profileEvent = await pool.get(relays, {
+ kinds: [0],
+ authors: [pubkey],
+ until: until,
+ limit: 1
+ });
  if (!profileEvent) {
  showStatus('プロフィールが見つかりませんでした。');
  return;
  }
-
  const profile = JSON.parse(profileEvent.content);
  const npub = window.NostrTools.nip19.npubEncode(pubkey);
- const aboutHtml = profile.about ? escapeHtml(profile.about).replace(/(https?:\/\/[^\s]+)/g, (url) => {
+ const customEmojis = profileEvent.tags.filter(t => t[0] === 'emoji');
+ const customEmojiMap = new Map();
+ customEmojis.forEach(([_, shortcode, url]) => {
+ customEmojiMap.set(`:${shortcode}:`, url);
+ });
+ function formatAboutContent(content) {
+ if (!content) return '';
+ let formattedContent = escapeHtml(content);
+ customEmojiMap.forEach((url, shortcode) => {
+ const regex = new RegExp(shortcode.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+ formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
+ });
+ formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
- }).replace(/\n/g, '<br>') : '';
-
+ });
+ return formattedContent.replace(/\n/g, '<br>');
+ }
+ const aboutHtml = formatAboutContent(profile.about);
  const html = `
  <div class="profile-card">
  <div class="profile-header">
@@ -489,7 +516,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  alert('npubのコピーに失敗しました。');
  }
  };
-
  showStatus('');
  } catch (err) {
  console.error('プロフィール取得中にエラー:', err);
