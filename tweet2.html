@@ -398,7 +398,7 @@ async function renderEventDetail(nostrId) {
  console.log(` - リプライ (kind:1): ${posts.length}件`);
  console.log(` - リポスト (kind:6): ${reposts.length}件`);
  console.log(` - 引用 (kind:16): ${quotes.length}件`);
- if (reactions.length > 0) renderReactions(reactions);
+ if (reactions.length > 0) renderReactions(reactions, customEmojiMap);
  if (posts.length > 0 || reposts.length > 0 || quotes.length > 0) {
  renderRelatedEvents(posts, reposts, quotes);
  }
