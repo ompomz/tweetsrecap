@@ -244,15 +244,12 @@ function renderMainEvent(event) {
  ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}</div>`;
 mainEventContainer.innerHTML = html;
 }
-function renderReactions(reactions) {
+function renderReactions(reactions, customEmojiMap) {
  const reactionGroups = new Map();
  reactions.forEach(reaction => {
  const emoji = reaction.content.trim();
  if (!reactionGroups.has(emoji)) {
- reactionGroups.set(emoji, {
- count: 0,
- pubkeys: new Set()
- });
+ reactionGroups.set(emoji, { count: 0, pubkeys: new Set() });
  }
  const group = reactionGroups.get(emoji);
  group.count++;
@@ -261,17 +258,22 @@ function renderReactions(reactions) {
  reactionsList.innerHTML = '';
  for (const [emoji, group] of reactionGroups.entries()) {
  const avatarsHtml = Array.from(group.pubkeys).map(pubkey => {
- const profile = userProfiles[pubkey] || {
- picture: DEFAULT_PROFILE_IMAGE
- };
+ const profile = userProfiles[pubkey] || { picture: DEFAULT_PROFILE_IMAGE };
  const npub = window.NostrTools.nip19.npubEncode(pubkey);
  const profileUrl = `?id=${npub}`;
  return `<a href="${profileUrl}"><img src="${profile.picture}" class="reaction-avatar" alt="reaction user avatar"></a>`;
  }).join('');
+let displayedEmojiHtml;
+ const emojiUrl = customEmojiMap.get(emoji);
+
+ if (emojiUrl) { displayedEmojiHtml = `<img src="${emojiUrl}" alt="${emoji}" class="reaction-custom-emoji">`;
+ } else {
  const displayedEmoji = emoji === '+' ? '⭐' : emoji;
+ displayedEmojiHtml = `<span class="reaction-emoji">${displayedEmoji}</span>`;
+ }
  const groupHtml = `
  <div class="reaction-group">
- <span class="reaction-emoji">${displayedEmoji}</span>
+ ${displayedEmojiHtml}
  <div class="reaction-avatars">${avatarsHtml}</div>
  </div>
  `;
@@ -279,7 +281,6 @@ function renderReactions(reactions) {
  }
  reactionsSection.style.display = 'block';
 }
-
 function renderRelatedEvents(posts, reposts, quotes) {
  const allRelatedEvents = [...posts, ...reposts, ...quotes];
  allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
@@ -367,6 +368,11 @@ async function renderEventDetail(nostrId) {
  showStatus('イベントが見つかりませんでした');
  return;
  }
+ const customEmojis = mainEvent.tags.filter(t => t[0] === 'emoji');
+ const customEmojiMap = new Map();
+ customEmojis.forEach(([_, shortcode, url]) => {
+ customEmojiMap.set(`:${shortcode}:`, url);
+ });
  console.log('✅ メインイベント取得成功:', {
  id: mainEvent.id.substring(0, 8) + '...',
  kind: mainEvent.kind,
