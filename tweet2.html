@@ -459,39 +459,33 @@ async function renderProfileDetail(nostrId) {
       showStatus('プロフィールが見つかりませんでした。');
       return;
     }
-
     const profile = JSON.parse(profileEvent.content);
     const npub = window.NostrTools.nip19.npubEncode(pubkey);
 
-    // プロフィール内のabout欄を整形する関数
-    function formatAboutContent(content, tags) {
-      if (!content) return '';
+function formatAboutContent(content, tags) {
+  if (!content) return '';
 
-      // ① 最初に、HTML特殊文字をエスケープ
-      let formattedContent = escapeHtml(content);
+  const customEmojis = tags.filter(t => t[0] === 'emoji');
+  const customEmojiMap = new Map();
+  customEmojis.forEach(([_, shortcode, url]) => {
+    customEmojiMap.set(`:${shortcode}:`, url);
+  });
+ 
+  let formattedContent = escapeHtml(content);
+  customEmojiMap.forEach((url, shortcode) => {
+    const regex = new RegExp(shortcode.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+    formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
+  });
 
-      // ② emojiタグからカスタム絵文字マップを生成
-      const customEmojis = tags.filter(t => t[0] === 'emoji');
-      const customEmojiMap = new Map();
-      customEmojis.forEach(([_, shortcode, url]) => {
-        customEmojiMap.set(`:${shortcode}:`, url);
-      });
-      
-      // ③ カスタム絵文字を置き換え
-      customEmojiMap.forEach((url, shortcode) => {
-        const regex = new RegExp(shortcode.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
-        formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
-      });
-
-      // ④ URLをリンク化
-      formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-      });
-
-      // ⑤ 改行を<br>に変換
-      return formattedContent.replace(/\n/g, '<br>');
+  formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+    if (formattedContent.includes(`<img src="${url}"`)) {
+        return url;
     }
-
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+ 
+ return formattedContent.replace(/\n/g, '<br>');
+}
     const aboutHtml = formatAboutContent(profile.about, profileEvent.tags);
 
     const html = `
