@@ -45,6 +45,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .about-text { font-size: 0.9rem; line-height: 1.5; color: #333; }
 .about-text a { color: #66b3ff; text-decoration: underline; }
 .about-text a:hover { color: #4da6ff; }
+.about-text .custom-emoji { height: 1.2rem; width: auto; vertical-align: middle; }
 .post-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: #999; }
 .post-content { margin: 0.5rem 0rem; line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
 .post-content img { max-width: 15rem; max-height: 15rem; height: auto; display: block; margin: 0.5rem 0rem; }
@@ -83,7 +84,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  if (window.history.length > 1) {
  window.history.back();
  } else {
- window.location.href = 'https://ompomz.github.io/flowgazer/index2';
+ window.location.href = 'https://ompomz.github.io/tweetsrecap/tweet';
  }
  }
 
@@ -190,26 +191,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  }
 
  async function fetchProfiles(pubkeys) {
-  if (pubkeys.length === 0) return;
-  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
-  if (pubkeysToFetch.length > 0) {
-    console.log(`ℹ️ ${pubkeysToFetch.length}件の新しいプロフィールイベント (kind:0) をフェッチします。`);
-  }
-  if (pubkeysToFetch.length === 0) return;
-  const until = Math.floor(Date.now() / 1000);
-  const profiles = await pool.list(FALLBACK_RELAYS, [{
-    kinds: [0],
-    authors: pubkeysToFetch,
-    until: until
-  }]);
-  console.log(`✅ ${profiles.length}件のプロフィールイベントを取得しました。`);
-  profiles.forEach(p => {
-    try {
-      userProfiles[p.pubkey] = JSON.parse(p.content);
-    } catch (e) {
-      console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
-    }
-  });
+ if (pubkeys.length === 0) return;
+ const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
+ if (pubkeysToFetch.length > 0) {
+ console.log(`ℹ️ ${pubkeysToFetch.length}件の新しいプロフィールイベント (kind:0) をフェッチします。`);
+ }
+ if (pubkeysToFetch.length === 0) return;
+ const until = Math.floor(Date.now() / 1000);
+ const profiles = await pool.list(FALLBACK_RELAYS, [{
+ kinds: [0],
+ authors: pubkeysToFetch,
+ until: until
+ }]);
+ console.log(`✅ ${profiles.length}件のプロフィールイベントを取得しました。`);
+ profiles.forEach(p => {
+ try {
+ userProfiles[p.pubkey] = JSON.parse(p.content);
+ } catch (e) {
+ console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
+ }
+ });
 }
 
  function createProfileHtml(pubkey, isLink = true) {
@@ -443,95 +444,95 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
  }
 
 async function renderProfileDetail(nostrId) {
-  showStatus('プロフィール情報を取得中...');
-  try {
-    const decoded = window.NostrTools.nip19.decode(nostrId);
-    if (decoded.type !== 'npub' && decoded.type !== 'nprofile') {
-      showStatus('エラー: 無効なnpubまたはnprofile形式です。');
-      return;
-    }
-    const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
-    const pubkey = decoded.data.id || decoded.data;
-    const until = Math.floor(Date.now() / 1000);
-    const profileEvent = await pool.get(relays, { kinds: [0], authors: [pubkey], until: until, limit: 1 });
+ showStatus('プロフィール情報を取得中...');
+ try {
+ const decoded = window.NostrTools.nip19.decode(nostrId);
+ if (decoded.type !== 'npub' && decoded.type !== 'nprofile') {
+ showStatus('エラー: 無効なnpubまたはnprofile形式です。');
+ return;
+ }
+ const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+ const pubkey = decoded.data.id || decoded.data;
+ const until = Math.floor(Date.now() / 1000);
+ const profileEvent = await pool.get(relays, { kinds: [0], authors: [pubkey], until: until, limit: 1 });
 
-    if (!profileEvent) {
-      showStatus('プロフィールが見つかりませんでした。');
-      return;
-    }
-    const profile = JSON.parse(profileEvent.content);
-    const npub = window.NostrTools.nip19.npubEncode(pubkey);
+ if (!profileEvent) {
+ showStatus('プロフィールが見つかりませんでした。');
+ return;
+ }
+ const profile = JSON.parse(profileEvent.content);
+ const npub = window.NostrTools.nip19.npubEncode(pubkey);
 
-   function formatAboutContent(content, tags) {
-  if (!content) return '';
-  // ① まずはHTML特殊文字をエスケープ
-  let formattedContent = escapeHtml(content);
-  // ② emojiタグからカスタム絵文字マップを生成
-  const customEmojis = tags.filter(t => t[0] === 'emoji');
-  const customEmojiMap = new Map();
-  customEmojis.forEach(([_, shortcode, url]) => {
-    // ショートコードをキーに、画像HTMLを値とするマップを作成
-    const imageTag = `<img src="${url}" alt="${shortcode}" class="custom-emoji">`;
-    customEmojiMap.set(`:${shortcode}:`, imageTag);
-  });  
-  // ③ カスタム絵文字のショートコードを、マップ内のHTMLに置き換え
-  customEmojiMap.forEach((imageTag, shortcode) => {
-    // 正規表現で、正確にショートコード（例：:monokashiwa:）をマッチさせる
-    const regex = new RegExp(shortcode.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
-    formattedContent = formattedContent.replace(regex, imageTag);
-  });
-  // ④ URLをリンク化
-  // ただし、すでにimgタグの一部となっているURLはスキップする
-  formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-    if (url.includes('imgur.com')) { // カスタム絵文字のURLかどうかを簡易的にチェック
-      return url;
-    }
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-  });
-  // ⑤ 改行を<br>に変換
-  return formattedContent.replace(/\n/g, '<br>');
+ function formatAboutContent(content, tags) {
+ if (!content) return '';
+ // ① まずはHTML特殊文字をエスケープ
+ let formattedContent = escapeHtml(content);
+ // ② emojiタグからカスタム絵文字マップを生成
+ const customEmojis = tags.filter(t => t[0] === 'emoji');
+ const customEmojiMap = new Map();
+ customEmojis.forEach(([_, shortcode, url]) => {
+ // ショートコードをキーに、画像HTMLを値とするマップを作成
+ const imageTag = `<img src="${url}" alt="${shortcode}" class="custom-emoji">`;
+ customEmojiMap.set(`:${shortcode}:`, imageTag);
+ }); 
+ // ③ カスタム絵文字のショートコードを、マップ内のHTMLに置き換え
+ customEmojiMap.forEach((imageTag, shortcode) => {
+ // 正規表現で、正確にショートコード（例：:monokashiwa:）をマッチさせる
+ const regex = new RegExp(shortcode.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'g');
+ formattedContent = formattedContent.replace(regex, imageTag);
+ });
+ // ④ URLをリンク化
+ // ただし、すでにimgタグの一部となっているURLはスキップする
+ formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+ if (url.includes('imgur.com')) { // カスタム絵文字のURLかどうかを簡易的にチェック
+ return url;
+ }
+ return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+ });
+ // ⑤ 改行を<br>に変換
+ return formattedContent.replace(/\n/g, '<br>');
 }
-    const aboutHtml = formatAboutContent(profile.about, profileEvent.tags);
+ const aboutHtml = formatAboutContent(profile.about, profileEvent.tags);
 
-    const html = `
-      <div class="profile-card">
-        <div class="profile-header">
-          <img src="${profile.picture || DEFAULT_PROFILE_IMAGE}" alt="Profile Picture" class="profile-picture">
-          <div class="profile-info-container">
-            <h2 class="profile-name">${escapeHtml(profile.name)}</h2>
-            <div class="npub-container">
-              <span id="npub-text" class="npub-text">${npub}</span>
-              <svg id="copy-npub-icon" class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
-            </div>
-            <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
-          </div>
-        </div>
-        <p class="about-text">${aboutHtml}</p>
-      </div>
-    `;
+ const html = `
+ <div class="profile-card">
+ <div class="profile-header">
+ <img src="${profile.picture || DEFAULT_PROFILE_IMAGE}" alt="Profile Picture" class="profile-picture">
+ <div class="profile-info-container">
+ <h2 class="profile-name">${escapeHtml(profile.name)}</h2>
+ <div class="npub-container">
+ <span id="npub-text" class="npub-text">${npub}</span>
+ <svg id="copy-npub-icon" class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+ <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+ <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+ </svg>
+ </div>
+ <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
+ </div>
+ </div>
+ <p class="about-text">${aboutHtml}</p>
+ </div>
+ `;
 
-    mainEventContainer.innerHTML = html;
+ mainEventContainer.innerHTML = html;
 
-    const copyIcon = document.getElementById('copy-npub-icon');
-    const npubText = document.getElementById('npub-text');
-    copyIcon.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(npub);
-        alert('npubがクリップボードにコピーされました！');
-      } catch (err) {
-        console.error('npubのコピーに失敗しました:', err);
-        alert('npubのコピーに失敗しました。');
-      }
-    };
+ const copyIcon = document.getElementById('copy-npub-icon');
+ const npubText = document.getElementById('npub-text');
+ copyIcon.onclick = async () => {
+ try {
+ await navigator.clipboard.writeText(npub);
+ alert('npubがクリップボードにコピーされました！');
+ } catch (err) {
+ console.error('npubのコピーに失敗しました:', err);
+ alert('npubのコピーに失敗しました。');
+ }
+ };
 
-    showStatus('');
-  } catch (err) {
-    console.error('プロフィール取得中にエラー:', err);
-    showStatus('プロフィールの取得中にエラーが発生しました。');
-  }
+ showStatus('');
+ } catch (err) {
+ console.error('プロフィール取得中にエラー:', err);
+ showStatus('プロフィールの取得中にエラーが発生しました。');
+ }
 }
 
  function renderInputForm() {
