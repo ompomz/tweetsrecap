@@ -22,6 +22,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.25rem 0rem 0.75rem 0rem; }
 .reaction-group { display: flex; align-items: center; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
 .reaction-emoji { line-height: 1rem; height: 1rem; }
+.reaction-custom-emoji { height: 1rem; width: auto; }
 .reaction-avatars { display: flex; flex-direction: row-reverse; }
 .reaction-avatar { width: 1rem; height: 1rem; border-radius: 50%; object-fit: cover; display: block; vertical-align: middle; margin-bottom: 0; }
 .related-posts { margin: 0.5rem 0rem; }
@@ -51,35 +52,34 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 <body>
 <div id="header-placeholder"></div>
 <div class="container">
-<div class="header-section">
-<button onclick="goBack()">もどる</button>
-<button onclick="copyUrl()">シェア</button>
-</div>
-<div id="main-event">
-</div>
-<p id="status" class="hidden"></p>
-<div id="reactions-section" style="display: none;">
-<div id="reactions-list" class="reactions-list"></div>
-</div>
-<div id="related-events-section" style="display: none;">
-<div id="related-events-list" class="related-posts"></div>
-</div>
-<div class="footer-section">
-<button onclick="goBack()">もどる</button>
-</div>
+ <div class="header-section">
+ <button onclick="goBack()">もどる</button>
+ <button onclick="copyUrl()">シェア</button>
+ </div>
+ <div id="main-event"></div>
+ <p id="status" class="hidden"></p>
+ <div id="reactions-section" style="display: none;">
+ <div id="reactions-list" class="reactions-list"></div>
+ </div>
+ <div id="related-events-section" style="display: none;">
+ <div id="related-events-list" class="related-posts"></div>
+ </div>
+ <div class="footer-section">
+ <button onclick="goBack()">もどる</button>
+ </div>
 </div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
-function goBack() {
+ function goBack() {
  if (window.history.length > 1) {
  window.history.back();
  } else {
  window.location.href = 'https://ompomz.github.io/flowgazer/index2';
  }
-}
+ }
 
-function copyUrl() {
+ function copyUrl() {
  navigator.clipboard.writeText(window.location.href)
  .then(() => {
  alert('URLがコピーされました！');
@@ -88,24 +88,24 @@ function copyUrl() {
  console.error('URLのコピーに失敗しました:', err);
  alert('URLのコピーに失敗しました。');
  });
-}
+ }
 
-const mainEventContainer = document.getElementById('main-event');
-const statusElement = document.getElementById('status');
-const reactionsSection = document.getElementById('reactions-section');
-const reactionsList = document.getElementById('reactions-list');
-const relatedEventsSection = document.getElementById('related-events-section');
-const relatedEventsList = document.getElementById('related-events-list');
+ const mainEventContainer = document.getElementById('main-event');
+ const statusElement = document.getElementById('status');
+ const reactionsSection = document.getElementById('reactions-section');
+ const reactionsList = document.getElementById('reactions-list');
+ const relatedEventsSection = document.getElementById('related-events-section');
+ const relatedEventsList = document.getElementById('related-events-list');
 
-const FALLBACK_RELAYS = [
+ const FALLBACK_RELAYS = [
  'wss://relay.nostr.band',
  'wss://nos.lol',
-];
-const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
-const pool = new window.NostrTools.SimplePool();
-const userProfiles = {};
+ ];
+ const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
+ const pool = new window.NostrTools.SimplePool();
+ const userProfiles = {};
 
-FALLBACK_RELAYS.forEach(url => {
+ FALLBACK_RELAYS.forEach(url => {
  pool.ensureRelay(url).then(relay => {
  relay.on('connect', () => console.log(`✅ リレーに接続しました: ${url}`));
  relay.on('disconnect', () => console.warn(`⚠️ リレーから切断されました: ${url}`));
@@ -113,18 +113,18 @@ FALLBACK_RELAYS.forEach(url => {
  }).catch(err => {
  console.error(`接続プールの設定中にエラーが発生しました: ${url}`, err);
  });
-});
+ });
 
-function showStatus(message) {
+ function showStatus(message) {
  statusElement.textContent = message;
  if (message) {
  statusElement.classList.remove('hidden');
  } else {
  statusElement.classList.add('hidden');
  }
-}
+ }
 
-function escapeHtml(str) {
+ function escapeHtml(str) {
  if (!str) return '';
  return str.replace(/[&<>"']/g, function(match) {
  const escape = {
@@ -136,9 +136,9 @@ function escapeHtml(str) {
  };
  return escape[match];
  });
-}
+ }
 
-function createNostrLink(nip19) {
+ function createNostrLink(nip19) {
  try {
  const decoded = window.NostrTools.nip19.decode(nip19);
  const {
@@ -159,9 +159,9 @@ function createNostrLink(nip19) {
  console.error('Failed to decode nostr link:', e);
  return '#';
  }
-}
+ }
 
-function formatPostContent(content, tags) {
+ function formatPostContent(content, tags) {
  let formattedContent = escapeHtml(content);
  formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
  if (/\.(png|jpe?g|gif|webp|svg|heic|avif)$/i.test(url)) {
@@ -179,9 +179,9 @@ function formatPostContent(content, tags) {
  formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
  });
  return formattedContent.replace(/\n/g, '<br>');
-}
+ }
 
-async function fetchProfiles(pubkeys) {
+ async function fetchProfiles(pubkeys) {
  if (pubkeys.length === 0) return;
  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
  if (pubkeysToFetch.length === 0) return;
@@ -199,9 +199,9 @@ async function fetchProfiles(pubkeys) {
  console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
  }
  });
-}
+ }
 
-function createProfileHtml(pubkey, isLink = true) {
+ function createProfileHtml(pubkey, isLink = true) {
  const profile = userProfiles[pubkey] || {
  name: 'Unknown',
  picture: DEFAULT_PROFILE_IMAGE
@@ -222,10 +222,11 @@ function createProfileHtml(pubkey, isLink = true) {
  } else {
  return profileContentHtml;
  }
-}
-function renderMainEvent(event) {
+ }
+ 
+ function renderMainEvent(event) {
  const date = new Date(event.created_at * 1000).toLocaleString();
- const client = event.tags.find(t => t[0] === 'client')?. [1] || '';
+ const client = event.tags.find(t => t[0] === 'client')?.[1] || '';
  let contentHtml;
  if (event.kind === 30023) {
  contentHtml = window.marked.parse(event.content);
@@ -241,10 +242,14 @@ function renderMainEvent(event) {
  <div class="post-content">${contentHtml}</div>
  <div class="post-info">
  <span>${date}</span>
- ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}</div>`;
-mainEventContainer.innerHTML = html;
-}
-function renderReactions(reactions) {
+ ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}
+ </div>
+ `;
+ mainEventContainer.innerHTML = html;
+ }
+
+ function renderReactions(reactions, customEmojiMap) {
+ console.log("カスタム絵文字マップ:", customEmojiMap);
  const reactionGroups = new Map();
  reactions.forEach(reaction => {
  const emoji = reaction.content.trim();
@@ -268,19 +273,28 @@ function renderReactions(reactions) {
  const profileUrl = `?id=${npub}`;
  return `<a href="${profileUrl}"><img src="${profile.picture}" class="reaction-avatar" alt="reaction user avatar"></a>`;
  }).join('');
+ let displayedEmojiHtml;
+ const emojiUrl = customEmojiMap.get(emoji);
+ console.log("リアクションの絵文字:", emoji, "URL:", emojiUrl);
+
+ if (emojiUrl) {
+ displayedEmojiHtml = `<img src="${emojiUrl}" alt="${emoji}" class="reaction-custom-emoji">`;
+ } else {
  const displayedEmoji = emoji === '+' ? '⭐' : emoji;
+ displayedEmojiHtml = `<span class="reaction-emoji">${displayedEmoji}</span>`;
+ }
  const groupHtml = `
  <div class="reaction-group">
- <span class="reaction-emoji">${displayedEmoji}</span>
+ ${displayedEmojiHtml}
  <div class="reaction-avatars">${avatarsHtml}</div>
  </div>
  `;
  reactionsList.innerHTML += groupHtml;
  }
  reactionsSection.style.display = 'block';
-}
+ }
 
-function renderRelatedEvents(posts, reposts, quotes) {
+ function renderRelatedEvents(posts, reposts, quotes) {
  const allRelatedEvents = [...posts, ...reposts, ...quotes];
  allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
  relatedEventsList.innerHTML = '';
@@ -318,9 +332,9 @@ function renderRelatedEvents(posts, reposts, quotes) {
  relatedEventsList.innerHTML += html;
  });
  relatedEventsSection.style.display = 'block';
-}
+ }
 
-async function renderEventDetail(nostrId) {
+ async function renderEventDetail(nostrId) {
  showStatus('イベントデータを取得中...');
  try {
  const decoded = window.NostrTools.nip19.decode(nostrId);
@@ -367,6 +381,19 @@ async function renderEventDetail(nostrId) {
  showStatus('イベントが見つかりませんでした');
  return;
  }
+ const customEmojis = mainEvent.tags.filter(t => t[0] === 'emoji');
+ const customEmojiMap = new Map();
+ customEmojis.forEach(([_, shortcode, url]) => {
+ customEmojiMap.set(`:${shortcode}:`, url);
+ });
+ const reactionEmojis = relatedEvents
+ .filter(e => e.kind === 7)
+ .flatMap(e => e.tags.filter(t => t[0] === 'emoji'));
+ reactionEmojis.forEach(([_, shortcode, url]) => {
+ if (!customEmojiMap.has(`:${shortcode}:`)) {
+ customEmojiMap.set(`:${shortcode}:`, url);
+ }
+ });
  console.log('✅ メインイベント取得成功:', {
  id: mainEvent.id.substring(0, 8) + '...',
  kind: mainEvent.kind,
@@ -392,7 +419,7 @@ async function renderEventDetail(nostrId) {
  console.log(` - リプライ (kind:1): ${posts.length}件`);
  console.log(` - リポスト (kind:6): ${reposts.length}件`);
  console.log(` - 引用 (kind:16): ${quotes.length}件`);
- if (reactions.length > 0) renderReactions(reactions);
+ if (reactions.length > 0) renderReactions(reactions, customEmojiMap);
  if (posts.length > 0 || reposts.length > 0 || quotes.length > 0) {
  renderRelatedEvents(posts, reposts, quotes);
  }
@@ -401,10 +428,10 @@ async function renderEventDetail(nostrId) {
  } catch (err) {
  console.error('❌ イベントの取得中にエラーが発生しました:', err);
  showStatus('イベントの取得中にエラーが発生しました。');
- } finally { }
-}
+ } finally {}
+ }
 
-async function fetchProfiles(pubkeys) {
+ async function fetchProfiles(pubkeys) {
  if (pubkeys.length === 0) return;
  const pubkeysToFetch = pubkeys.filter(pubkey => !userProfiles[pubkey]);
  if (pubkeysToFetch.length > 0) {
@@ -425,8 +452,9 @@ async function fetchProfiles(pubkeys) {
  console.error('❌ プロフィールJSONのパースに失敗しました:', p.pubkey, e);
  }
  });
-}
-async function renderProfileDetail(nostrId) {
+ }
+
+ async function renderProfileDetail(nostrId) {
  showStatus('プロフィール情報を取得中...');
  try {
  const decoded = window.NostrTools.nip19.decode(nostrId);
@@ -448,7 +476,7 @@ async function renderProfileDetail(nostrId) {
  return;
  }
  const profile = JSON.parse(profileEvent.content);
- const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : ''; 
+ const aboutText = profile.about ? escapeHtml(profile.about).replace(/\n/g, '<br>') : '';
  const html = `
  <div class="profile-card">
  <img src="${profile.picture}" alt="Profile Picture">
@@ -463,9 +491,10 @@ async function renderProfileDetail(nostrId) {
  } catch (err) {
  console.error('プロフィール取得中にエラー:', err);
  showStatus('プロフィールの取得中にエラーが発生しました。');
- } finally { }
-}
-function renderInputForm() {
+ } finally {}
+ }
+
+ function renderInputForm() {
  mainEventContainer.innerHTML = `
  <div class="input-form-container">
  <p class="form-title">イベントまたはユーザーのNostr IDを入力してください</p>
@@ -487,8 +516,9 @@ function renderInputForm() {
  alert('有効なNostr ID (note1, nevent1, naddr1, npub1, nprofile1) を入力してください。');
  }
  });
-}
-window.onload = () => {
+ }
+
+ window.onload = () => {
  const urlParams = new URLSearchParams(window.location.search);
  const id = urlParams.get('id');
  if (id) {
@@ -503,7 +533,7 @@ window.onload = () => {
  } else {
  renderInputForm();
  }
-};
+ };
 </script>
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
