@@ -62,6 +62,7 @@
   .modal-image{width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;}
   .close-button{color:#fff;font-size:40px;font-weight:700;cursor:pointer;transition:0.3s;}
   .close-button:hover,.close-button:focus{color:#eee;text-decoration:none;cursor:pointer;}
+  .custom-emoji-hover:hover{transform:scale(1.5);z-index:10}
 </style>
 </head>
 <body>
@@ -192,7 +193,7 @@
  const customEmojis = tags.filter(t => t[0] === 'emoji');
  customEmojis.forEach(([_, shortcode, url]) => {
  const regex = new RegExp(`:${shortcode}:`, 'g');
- formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji">`);
+ formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji custom-emoji-hover">`);
  });
  return formattedContent.replace(/\n/g, '<br>');
  }
@@ -295,7 +296,7 @@ function createProfileHtml(pubkey, isLink = true) {
  console.log("リアクションの絵文字:", emoji, "URL:", emojiUrl);
 
  if (emojiUrl) {
- displayedEmojiHtml = `<img src="${emojiUrl}" alt="${emoji}" class="reaction-custom-emoji">`;
+ displayedEmojiHtml = `<img src="${emojiUrl}" alt="${emoji}" class="reaction-custom-emoji custom-emoji-hover">`;
  } else {
  const displayedEmoji = emoji === '+' ? '⭐' : emoji;
  displayedEmojiHtml = `<span class="reaction-emoji">${displayedEmoji}</span>`;
