@@ -89,7 +89,7 @@
  });
  }
 
- function escapeHtmlPreservingImg(str) {
+function escapeHtmlPreservingImg(str) {
   return str.replace(/<(?!img\b)[^>]*>/g, function(match) {
     return match.replace(/[&<>"']/g, function(m) {
       const escape = {
@@ -103,6 +103,7 @@
     });
   });
 }
+
 
  function createNostrLink(nip19) {
  try {
@@ -127,12 +128,12 @@
  }
  }
 
-async function formatPostContent(content, tags, customEmojiMap) {
+ async function formatPostContent(content, tags, customEmojiMap) {
   console.log('🔄 formatPostContent: 投稿内容のフォーマットを開始します');
 
   const emojiMapToUse = customEmojiMap || new Map();
 
-  // ① まず :shortcode: を <img> タグに変換（escapeHtml前にやる）
+  // ① :shortcode: を <img> に変換（escapeHtml前にやる）
   let formattedContent = content;
   emojiMapToUse.forEach((url, shortcode) => {
     const regex = new RegExp(`:${shortcode}:`, 'g');
@@ -140,12 +141,16 @@ async function formatPostContent(content, tags, customEmojiMap) {
     console.log(`😀 カスタム絵文字を検出・変換: :${shortcode}:`);
   });
 
-  // ② それ以外の部分を escapeHtml（ただし <img> タグは残す）
+  // ② escapeHtmlPreservingImg を使って <img> タグを守る
   formattedContent = escapeHtmlPreservingImg(formattedContent);
 
-  // ③ URLをリンクや画像に変換
+  // ③ URLをリンクや画像に変換（<img> の中は対象外にする）
   const urlRegex = /\b(https?:\/\/[^\s]+)/g;
   formattedContent = formattedContent.replace(urlRegex, (url) => {
+    // <img> タグの中のURLはスキップ
+    if (formattedContent.includes(`<img src="${url}"`)) {
+      return url;
+    }
     const imageExtensions = /\.(png|jpe?g|gif|webp|svg|heic|avif)$/i;
     if (imageExtensions.test(url)) {
       console.log(`🖼️ URLを画像タグに変換: ${url}`);
