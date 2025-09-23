@@ -408,7 +408,7 @@ customEmojis.forEach(([_, shortcode, url]) => {
  await fetchProfiles([event.pubkey]);
 
  const date = new Date(event.created_at * 1000).toLocaleString();
- const content = event.content.length > 150 ? event.content.substring(0, 150) + '...' : event.content;
+const content = event.content;
 const formattedContent = await formatPostContent(content, event.tags, globalCustomEmojiMap);
  const postTypeLabel = getPostTypeLabel(event.kind);
  const eventUrl = `?id=${nostrId}`;
