@@ -25,11 +25,12 @@
         .post-time { color: #66b3ff; text-decoration: none; }
         .post-time:hover { text-decoration: underline; color: #4da6ff; }
         #status { margin-top: 0.5rem; font-weight: bold; color: #ff99cc; }
-        .modal{ display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,.8); overflow: auto; }
-        .close-button{ position: absolute; top: 15px; right: 35px; color: #fff; font-size: 40px; font-weight: 700; transition: 0.3s; cursor: pointer; }
-        .close-button:hover,.close-button:focus{ color: #bbb; text-decoration: none; }
-        .modal-image{ margin: auto; display: block; max-width: 90%; max-height: 90%; object-fit: contain; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); }
-    </style>
+ .modal{display:none;position:fixed;z-index:1;left:0;top:0;width:100%;height:100%;overflow:auto;background-color:rgba(0,0,0,0.2);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);}
+ .modal-content{margin:auto;display:block;max-width:80%;max-height:80vh;width:80%;}
+ .modal-image{width:auto;height:auto;max-width:100%;max-height:100%;object-fit:contain;display:block;margin:auto;}
+ .close-button{color:#fff;font-size:40px;font-weight:700;cursor:pointer;transition:0.3s;}
+ .close-button:hover,.close-button:focus{color:#eee;text-decoration:none;cursor:pointer;}
+</style>
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -59,22 +60,37 @@
             <p id="status"></p>
         </div>
     </div>
-    <div id="modal" class="modal">
-        <span class="close-button" onclick="closeModal()">&times;</span>
-        <img id="modal-image" class="modal-image">
-    </div>
+    <div id="modal" class="modal"><div class="modal-content"><span class="close-button">&times;</span><img id="modal-image" class="modal-image" src="" alt="拡大画像"></div></div>
+    <script>
+    // ドキュメントが完全に読み込まれてから実行する
+    document.addEventListener('DOMContentLoaded', () => {
+        const modal = document.getElementById('modal');
+        const closeButton = document.querySelector('.close-button');
+
+        // 閉じるボタンがクリックされたらモーダルを閉じる
+        closeButton.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        // モーダルの背景部分をクリックしたときに閉じる
+        modal.addEventListener('click', (event) => {
+            // クリックされた要素がモーダル自体であれば閉じる
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    });
+
+    // openModal関数は外部から呼び出せるようにそのまま残す
+    function openModal(imageUrl){
+        const modal = document.getElementById('modal');
+        const modalImage = document.getElementById('modal-image');
+        modal.style.display = 'block';
+        modalImage.src = imageUrl;
+    }
+</script>
     <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
     <script>
-        function openModal(imageUrl){
-            const modal=document.getElementById('modal');
-            const modalImage=document.getElementById('modal-image');
-            modal.style.display="block";
-            modalImage.src=imageUrl
-        }
-        function closeModal(){
-            const modal=document.getElementById('modal');
-            modal.style.display="none"
-        }
         let RELAY_URL='wss://relay.nostr.band';
         async function checkRelay(url){
             try{
