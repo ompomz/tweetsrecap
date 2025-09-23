@@ -54,6 +54,7 @@
  const DEFAULT_PROFILE_IMAGE = 'https://ompomz.github.io/favicon.ico';
  const pool = new window.NostrTools.SimplePool();
  const userProfiles = {};
+ const globalCustomEmojiMap = new Map();
 
  FALLBACK_RELAYS.forEach(url => {
  pool.ensureRelay(url).then(relay => {
@@ -387,15 +388,19 @@ async function renderRelatedEvents(posts, reposts, quotes, customEmojiMap) { // 
  return `<div class="related-post-card">イベントが見つかりませんでした</div>`;
  }
 
- const customEmojis = event.tags.filter(t => t[0] === 'emoji');
- const customEmojiMap = new Map();
- customEmojis.forEach(([_, shortcode, url]) => customEmojiMap.set(shortcode, url));
+const customEmojis = event.tags.filter(t => t[0] === 'emoji');
+customEmojis.forEach(([_, shortcode, url]) => {
+  if (!globalCustomEmojiMap.has(shortcode)) {
+    globalCustomEmojiMap.set(shortcode, url);
+    console.log(`🆕 createNostrCard内で絵文字追加: :${shortcode}:`);
+  }
+});
 
  await fetchProfiles([event.pubkey]);
 
  const date = new Date(event.created_at * 1000).toLocaleString();
  const content = event.content.length > 150 ? event.content.substring(0, 150) + '...' : event.content;
- const formattedContent = await formatPostContent(content, event.tags, customEmojiMap);
+const formattedContent = await formatPostContent(content, event.tags, globalCustomEmojiMap);
  const postTypeLabel = getPostTypeLabel(event.kind);
  const eventUrl = `?id=${nostrId}`;
  const eventHtml = `...`;
