@@ -146,19 +146,23 @@ function escapeHtmlPreservingImg(str) {
 
   // ③ URLをリンクや画像に変換（<img> の中は対象外にする）
   const urlRegex = /\b(https?:\/\/[^\s]+)/g;
-  formattedContent = formattedContent.replace(urlRegex, (url) => {
-    // <img> タグの中のURLはスキップ
-    if (formattedContent.includes(`<img src="${url}"`)) {
-      return url;
-    }
-    const imageExtensions = /\.(png|jpe?g|gif|webp|svg|heic|avif)$/i;
-    if (imageExtensions.test(url)) {
-      console.log(`🖼️ URLを画像タグに変換: ${url}`);
-      return `<a href="#" onclick="event.preventDefault(); openModal(this)"><img src="${url}" alt="post image" class="post-image"></a>`;
-    }
-    console.log(`🔗 URLをリンクに変換: ${url}`);
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
-  });
+formattedContent = formattedContent.replace(urlRegex, (url, _, offset) => {
+  // offset位置の前後を見て、<img src="..."> の中かどうかを判定
+  const before = formattedContent.slice(Math.max(0, offset - 20), offset);
+  const insideImgTag = /<img[^>]*src=["']?$/.test(before);
+
+  if (insideImgTag) {
+    return url; // <img> タグの中ならスキップ
+  }
+  const imageExtensions = /\.(png|jpe?g|gif|webp|svg|heic|avif)$/i;
+  if (imageExtensions.test(url)) {
+    console.log(`🖼️ URLを画像タグに変換: ${url}`);
+    return `<a href="#" onclick="event.preventDefault(); openModal(this)"><img src="${url}" alt="post image" class="post-image"></a>`;
+  }
+  console.log(`🔗 URLをリンクに変換: ${url}`);
+  return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+});
+
 
   // ④ nostr:ID をプレースホルダーに変換
   const nostrIdsToFetch = [];
