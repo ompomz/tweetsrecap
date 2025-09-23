@@ -223,7 +223,7 @@
   async function renderMainEvent(event) {
     console.log(`メインイベントのレンダリングを開始: kind=${event.kind}, id=${event.id}`);
     const date = new Date(event.created_at * 1000).toLocaleString();
-    const client = event.tags.find(t => t[0] === 'client') ? .[1] || '';
+    const client = event.tags.find(t => t[0] === 'client')?.[1] || '';
     let contentHtml;
     if (event.kind === 30023) {
       contentHtml = window.marked.parse(event.content)
