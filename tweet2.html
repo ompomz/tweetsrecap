@@ -63,17 +63,6 @@
  .close-button{color:#fff;font-size:40px;font-weight:700;cursor:pointer;transition:0.3s;}
  .close-button:hover,.close-button:focus{color:#eee;text-decoration:none;cursor:pointer;}
  .custom-emoji-hover:hover{transform:scale(2.0);z-index:10}
- .nostr-card-placeholder { display: none; }
- .nostr-card-link { text-decoration: none; color: inherit; display: block; }
- .nostr-card { background-color: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; display: flex; gap: 0.5rem; align-items: center; }
- .nostr-card.event-card .nostr-card-content { flex-grow: 1; }
- .nostr-card.profile-card { align-items: center; }
- .nostr-card-image { width: 2.5rem; height: 2.5rem; border-radius: 50%; flex-shrink: 0; }
- .nostr-card-content { display: flex; flex-direction: column; overflow: hidden; }
- .nostr-card-name { font-size: 0.9rem; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
- .nostr-card-nip05 { font-size: 0.75rem; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
- .nostr-card-text { font-size: 0.8rem; color: #555; margin: 0; }
- .nostr-card-date { font-size: 0.7rem; color: #999; text-align: right; margin-top: 0.25rem; }
 </style>
 </head>
 <body>
@@ -359,66 +348,67 @@
  relatedEventsSection.style.display = 'block';
  }
 
- async function createNostrCard(nostrId) {
- let decoded;
- try {
- decoded = window.NostrTools.nip19.decode(nostrId);
- } catch (e) {
- return `<div class="error-card">無効なNostr ID</div>`;
- }
+async function createNostrCard(nostrId) {
+    let decoded;
+    try {
+        decoded = window.NostrTools.nip19.decode(nostrId);
+    } catch (e) {
+        return `<div class="error-card">無効なNostr ID</div>`;
+    }
+    const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+    const until = Math.floor(Date.now() / 1000);
+    let event;
 
- const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
- const until = Math.floor(Date.now() / 1000);
- let event;
-
- if (decoded.type === 'note' || decoded.type === 'nevent') {
- const eventId = decoded.data.id || decoded.data;
- event = await pool.get(relays, { ids: [eventId], until: until, limit: 1 });
- } else if (decoded.type === 'npub' || decoded.type === 'nprofile') {
- const pubkey = decoded.data.id || decoded.data;
- const profileEvent = await pool.get(relays, { kinds: [0], authors: [pubkey], until: until, limit: 1 });
- if (profileEvent) {
- const profile = JSON.parse(profileEvent.content);
- const npub = window.NostrTools.nip19.npubEncode(pubkey);
- const profileHtml = `
- <a href="?id=${npub}" class="nostr-card-link">
- <div class="nostr-card profile-card">
- <img src="${profile.picture || DEFAULT_PROFILE_IMAGE}" class="nostr-card-image" alt="Profile picture">
- <div class="nostr-card-content">
- <span class="nostr-card-name">${escapeHtml(profile.name || 'Unknown')}</span>
- <span class="nostr-card-nip05">${profile.nip05 ? escapeHtml(profile.nip05) : npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
- </div>
- </div>
- </a>
- `;
- return profileHtml;
- }
- } else {
- return `<div class="error-card">対応していないIDタイプです</div>`;
- }
-
- if (!event) {
- return `<div class="nostr-card">イベントが見つかりませんでした</div>`;
- }
-
- await fetchProfiles([event.pubkey]);
- const date = new Date(event.created_at * 1000).toLocaleString();
- const content = event.content.length > 150 ? escapeHtml(event.content.substring(0, 150)) + '...' : escapeHtml(event.content);
- const eventUrl = `?id=${nostrId}`;
-
- const eventHtml = `
- <a href="${eventUrl}" class="nostr-card-link">
- <div class="nostr-card event-card">
- ${createProfileHtml(event.pubkey, false)}
- <div class="nostr-card-content">
- <p class="nostr-card-text">${content}</p>
- <span class="nostr-card-date">${date}</span>
- </div>
- </div>
- </a>
- `;
- return eventHtml;
- }
+    // npub / nprofileの場合
+    if (decoded.type === 'npub' || decoded.type === 'nprofile') {
+        const pubkey = decoded.data.id || decoded.data;
+        const profileEvent = await pool.get(relays, { kinds: [0], authors: [pubkey], until: until, limit: 1 });
+        if (profileEvent) {
+            const profile = JSON.parse(profileEvent.content);
+            const npub = window.NostrTools.nip19.npubEncode(pubkey);
+            const profileHtml = `
+            <div class="related-post-card">
+                ${createProfileHtml(pubkey)}
+                <div class="post-info">
+                    <span>${npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
+                </div>
+                <div class="post-content">
+                    <p class="post-text">${escapeHtml(profile.about || '')}</p>
+                </div>
+            </div>`;
+            return profileHtml;
+        }
+    }
+    // note / neventの場合
+    else if (decoded.type === 'note' || decoded.type === 'nevent') {
+        const eventId = decoded.data.id || decoded.data;
+        event = await pool.get(relays, { ids: [eventId], until: until, limit: 1 });
+    } else {
+        return `<div class="error-card">対応していないIDタイプです</div>`;
+    }
+    if (!event) {
+        return `<div class="nostr-card">イベントが見つかりませんでした</div>`;
+    }
+    await fetchProfiles([event.pubkey]);
+    const date = new Date(event.created_at * 1000).toLocaleString();
+    const content = event.content.length > 150 ? escapeHtml(event.content.substring(0, 150)) + '...' : escapeHtml(event.content);
+    const postTypeLabel = getPostTypeLabel(event.kind);
+    const eventUrl = `?id=${nostrId}`;
+    const eventHtml = `
+    <a href="${eventUrl}" class="nostr-card-link">
+        <div class="related-post-card">
+            ${createProfileHtml(event.pubkey)}
+            <div class="post-info">
+                <span>${date}</span>
+                <span>${postTypeLabel}</span>
+            </div>
+            <div class="post-content">
+                <p class="post-text">${content}</p>
+            </div>
+        </div>
+    </a>`;
+    return eventHtml;
+}
 
  async function renderEventDetail(nostrId) {
  showStatus('イベントデータを取得中...');
