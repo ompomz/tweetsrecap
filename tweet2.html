@@ -182,7 +182,7 @@
  const placeholderRegex = /nostr:(n(?:event|note|pub|profile|addr)1\S+)/g;
  formattedContent = formattedContent.replace(placeholderRegex, (match, nip19) => {
  nostrIdsToFetch.push(nip19);
- return `<div data-nostr-id="${nip19}" class="nostr-card-placeholder"></div>`;
+ return `<div data-nostr-id="${nip19}"></div>`;
  });
 
  // カスタム絵文字の処理
@@ -321,7 +321,7 @@
  switch (event.kind) {
  case 1:
  postTypeLabel = 'リプライ';
- postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
+ postContentHtml = `<div class="post-content">${await formatPostContent(event.content, event.tags)}</div>`;
  break;
  case 6:
  postTypeLabel = 'リポスト';
@@ -330,7 +330,7 @@
  break;
  case 16:
  postTypeLabel = '引用';
- postContentHtml = `<div class="post-content">${formatPostContent(event.content, event.tags)}</div>`;
+ postContentHtml = `<div class="post-content">${await formatPostContent(event.content, event.tags)}</div>`;
  break;
  }
  const html = `
@@ -367,17 +367,19 @@ function getPostTypeLabel(kind){switch(kind){case 1:return'投稿';case 6:return
         if (profileEvent) {
             const profile = JSON.parse(profileEvent.content);
             const npub = window.NostrTools.nip19.npubEncode(pubkey);
-            const profileHtml = `
-            <div class="related-post-card">
-                ${createProfileHtml(pubkey)}
-                <div class="post-info">
-                    <span>${npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
-                </div>
-                <div class="post-content">
-                    <p class="post-text">${escapeHtml(profile.about || '')}</p>
-                </div>
-            </div>`;
-            return profileHtml;
+const profileHtml = `
+<a href="?id=${npub}">
+    <div class="related-post-card">
+        ${createProfileHtml(pubkey)}
+        <div class="post-info">
+            <span>${npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
+        </div>
+        <div class="post-content">
+            <p class="post-text">${escapeHtml(profile.about || '')}</p>
+        </div>
+    </div>
+</a>`;
+return profileHtml;
         }
     }
     // note / neventの場合
@@ -388,27 +390,27 @@ function getPostTypeLabel(kind){switch(kind){case 1:return'投稿';case 6:return
         return `<div class="error-card">対応していないIDタイプです</div>`;
     }
     if (!event) {
-        return `<div class="nostr-card">イベントが見つかりませんでした</div>`;
+        return `<div class="related-post-card">イベントが見つかりませんでした</div>`;
     }
     await fetchProfiles([event.pubkey]);
     const date = new Date(event.created_at * 1000).toLocaleString();
     const content = event.content.length > 150 ? escapeHtml(event.content.substring(0, 150)) + '...' : escapeHtml(event.content);
     const postTypeLabel = getPostTypeLabel(event.kind);
     const eventUrl = `?id=${nostrId}`;
-    const eventHtml = `
-    <a href="${eventUrl}" class="nostr-card-link">
-        <div class="related-post-card">
-            ${createProfileHtml(event.pubkey)}
-            <div class="post-info">
-                <span>${date}</span>
-                <span>${postTypeLabel}</span>
-            </div>
-            <div class="post-content">
-                <p class="post-text">${content}</p>
-            </div>
+const eventHtml = `
+<a href="${eventUrl}">
+    <div class="related-post-card">
+        ${createProfileHtml(event.pubkey)}
+        <div class="post-info">
+            <span>${date}</span>
+            <span>${postTypeLabel}</span>
         </div>
-    </a>`;
-    return eventHtml;
+        <div class="post-content">
+            <p class="post-text">${content}</p>
+        </div>
+    </div>
+</a>`;
+return eventHtml;
 }
 
  async function renderEventDetail(nostrId) {
