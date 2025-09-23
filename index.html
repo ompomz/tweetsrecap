@@ -117,7 +117,7 @@ input[type="text"] { flex-grow: 1; }
  const statusMessage = document.getElementById("status");
  const reactionCounts = {};
  reactions.forEach(reaction => {
- const targetEventId = reaction.tags.find(tag => tag[0] === 'e') ? .[1];
+ const targetEventId = reaction.tags.find(tag => tag[0] === 'e')?.[1];
  if (targetEventId) {
  if (!reactionCounts[targetEventId]) {
  reactionCounts[targetEventId] = {
