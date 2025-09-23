@@ -148,6 +148,21 @@
  });
  }
 
+ function escapeHtmlPreservingImg(str) {
+  return str.replace(/<(?!img\b)[^>]*>/g, function(match) {
+    return match.replace(/[&<>"']/g, function(m) {
+      const escape = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      };
+      return escape[m];
+    });
+  });
+}
+
  function createNostrLink(nip19) {
  try {
  const decoded = window.NostrTools.nip19.decode(nip19);
@@ -171,48 +186,61 @@
  }
  }
 
- async function formatPostContent(content, tags, customEmojiMap) {
- console.log('🔄 formatPostContent: 投稿内容のフォーマットを開始します');
- let formattedContent = escapeHtml(content);
- const urlRegex = /\b(https?:\/\/[^\s]+)/g;
- formattedContent = formattedContent.replace(urlRegex, (url) => {
- const imageExtensions = /\.(png|jpe?g|gif|webp|svg|heic|avif)$/i;
- if (imageExtensions.test(url)) {
- console.log(`🖼️ URLを画像タグに変換: ${url}`);
- return `<a href="#" onclick="event.preventDefault(); openModal(this)"><img src="${url}" alt="post image" class="post-image"></a>`;
- }
- console.log(`🔗 URLをリンクに変換: ${url}`);
- return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
- });
- const nostrIdsToFetch = [];
- const placeholderRegex = /nostr:(n(?:event|note|pub|profile|addr)1\S+)/g;
- formattedContent = formattedContent.replace(placeholderRegex, (match, nip19) => {
- nostrIdsToFetch.push(nip19);
- console.log(`📄 Nostr IDをプレースホルダーに置き換え: ${nip19}`);
- return `<div data-nostr-id="${nip19}"></div>`;
- });
- const emojiMapToUse = customEmojiMap || new Map();
- emojiMapToUse.forEach((url, shortcode) => {
- const regex = new RegExp(`:${shortcode}:`, 'g');
- formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji custom-emoji-hover">`);
- console.log(`😀 カスタム絵文字を検出・変換: :${shortcode}:`);
- });
- const tempDiv = document.createElement('div');
- tempDiv.innerHTML = formattedContent;
- console.log(`🚀 ${nostrIdsToFetch.length}個のNostrカードを非同期で取得開始...`);
- await Promise.all(nostrIdsToFetch.map(async (nostrId) => {
- const cardHtml = await createNostrCard(nostrId);
- const placeholder = tempDiv.querySelector(`[data-nostr-id="${nostrId}"]`);
- if (placeholder) {
- placeholder.outerHTML = cardHtml;
- console.log(`✅ Nostrカードを挿入完了: ${nostrId}`);
- } else {
- console.warn(`⚠️ プレースホルダーが見つかりません: ${nostrId}`);
- }
- }));
- console.log('🎉 formatPostContent: 処理完了');
- return tempDiv.innerHTML.replace(/<br>/g, '\n').replace(/\n/g, '<br>');
- }
+async function formatPostContent(content, tags, customEmojiMap) {
+  console.log('🔄 formatPostContent: 投稿内容のフォーマットを開始します');
+
+  const emojiMapToUse = customEmojiMap || new Map();
+
+  // ① まず :shortcode: を <img> タグに変換（escapeHtml前にやる）
+  let formattedContent = content;
+  emojiMapToUse.forEach((url, shortcode) => {
+    const regex = new RegExp(`:${shortcode}:`, 'g');
+    formattedContent = formattedContent.replace(regex, `<img src="${url}" alt="${shortcode}" class="custom-emoji custom-emoji-hover">`);
+    console.log(`😀 カスタム絵文字を検出・変換: :${shortcode}:`);
+  });
+
+  // ② それ以外の部分を escapeHtml（ただし <img> タグは残す）
+  formattedContent = escapeHtmlPreservingImg(formattedContent);
+
+  // ③ URLをリンクや画像に変換
+  const urlRegex = /\b(https?:\/\/[^\s]+)/g;
+  formattedContent = formattedContent.replace(urlRegex, (url) => {
+    const imageExtensions = /\.(png|jpe?g|gif|webp|svg|heic|avif)$/i;
+    if (imageExtensions.test(url)) {
+      console.log(`🖼️ URLを画像タグに変換: ${url}`);
+      return `<a href="#" onclick="event.preventDefault(); openModal(this)"><img src="${url}" alt="post image" class="post-image"></a>`;
+    }
+    console.log(`🔗 URLをリンクに変換: ${url}`);
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+  });
+
+  // ④ nostr:ID をプレースホルダーに変換
+  const nostrIdsToFetch = [];
+  const placeholderRegex = /nostr:(n(?:event|note|pub|profile|addr)1\S+)/g;
+  formattedContent = formattedContent.replace(placeholderRegex, (match, nip19) => {
+    nostrIdsToFetch.push(nip19);
+    console.log(`📄 Nostr IDをプレースホルダーに置き換え: ${nip19}`);
+    return `<div data-nostr-id="${nip19}"></div>`;
+  });
+
+  // ⑤ DOMに挿入してカードを生成
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = formattedContent;
+  console.log(`🚀 ${nostrIdsToFetch.length}個のNostrカードを非同期で取得開始...`);
+  await Promise.all(nostrIdsToFetch.map(async (nostrId) => {
+    const cardHtml = await createNostrCard(nostrId);
+    const placeholder = tempDiv.querySelector(`[data-nostr-id="${nostrId}"]`);
+    if (placeholder) {
+      placeholder.outerHTML = cardHtml;
+      console.log(`✅ Nostrカードを挿入完了: ${nostrId}`);
+    } else {
+      console.warn(`⚠️ プレースホルダーが見つかりません: ${nostrId}`);
+    }
+  }));
+
+  console.log('🎉 formatPostContent: 処理完了');
+  return tempDiv.innerHTML.replace(/<br>/g, '\n').replace(/\n/g, '<br>');
+}
 
  async function fetchProfiles(pubkeys) {
  console.log(`🔍 プロフィール取得を開始: ${pubkeys.length}件`);
