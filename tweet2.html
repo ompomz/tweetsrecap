@@ -348,7 +348,8 @@
  relatedEventsSection.style.display = 'block';
  }
 
-async function createNostrCard(nostrId) {
+function getPostTypeLabel(kind){switch(kind){case 1:return'投稿';case 6:return'リポスト';case 7:return'リアクション';case 40:return'チャンネル作成';case 41:return'チャンネル情報更新';case 42:return'チャンネルメッセージ';default:return'イベント'}} 
+ async function createNostrCard(nostrId) {
     let decoded;
     try {
         decoded = window.NostrTools.nip19.decode(nostrId);
