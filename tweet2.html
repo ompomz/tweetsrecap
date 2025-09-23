@@ -174,8 +174,9 @@ formattedContent = formattedContent.replace(urlRegex, (url, _, offset) => {
   });
 
   // ⑤ DOMに挿入してカードを生成
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = formattedContent;
+const tempDiv = document.createElement('div');
+tempDiv.innerHTML = formattedContent;
+console.log('🧪 formattedContent:', formattedContent); // ←ここ！
   console.log(`🚀 ${nostrIdsToFetch.length}個のNostrカードを非同期で取得開始...`);
   await Promise.all(nostrIdsToFetch.map(async (nostrId) => {
     const cardHtml = await createNostrCard(nostrId);
@@ -376,7 +377,13 @@ async function renderRelatedEvents(posts, reposts, quotes, customEmojiMap) { // 
  if (profileEvent) {
  const profile = JSON.parse(profileEvent.content);
  const npub = window.NostrTools.nip19.npubEncode(pubkey);
- const profileHtml = `...`;
+const eventHtml = `
+  <div class="related-post-card">
+    <div class="post-header">${postTypeLabel} - ${date}</div>
+    <div class="post-content">${formattedContent}</div>
+    <a href="${eventUrl}" class="post-link">詳細を見る</a>
+  </div>
+`;
  console.log('✅ プロフィールカード生成完了');
  return profileHtml;
  }
@@ -412,7 +419,14 @@ const content = event.content;
 const formattedContent = await formatPostContent(content, event.tags, globalCustomEmojiMap);
  const postTypeLabel = getPostTypeLabel(event.kind);
  const eventUrl = `?id=${nostrId}`;
- const eventHtml = `...`;
+const eventHtml = `
+  <div class="related-post-card">
+    <div class="post-header">${postTypeLabel} - ${date}</div>
+    <div class="post-content">${formattedContent}</div>
+    <a href="${eventUrl}" class="post-link">詳細を見る</a>
+  </div>
+`;
+ console.log('🧪 formattedContent from createNostrCard:', formattedContent);
  console.log('✅ イベントカード生成完了');
  return eventHtml;
 }
