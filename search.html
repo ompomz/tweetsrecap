@@ -90,40 +90,52 @@
       }
       await searchBatch();
     }
+async function searchBatch() {
+  const filters = [{
+    kinds: [1, 42],
+    authors: [pubkey],
+    until: lastTimestamp,
+    limit: 500
+  }];
 
-    async function searchBatch() {
-      const filters = [{
-        kinds: [1, 42],
-        authors: [pubkey],
-        until: lastTimestamp,
-        limit: 500
-      }];
+  // フィルター構造チェック
+  if (
+    !Array.isArray(filters) ||
+    typeof filters[0] !== "object" ||
+    !Array.isArray(filters[0].kinds) ||
+    !Array.isArray(filters[0].authors) ||
+    typeof filters[0].limit !== "number"
+  ) {
+    console.error("❌ フィルター構造が不正です:", filters);
+    alert("フィルター構造に問題があります。");
+    return;
+  }
 
-      console.log("📦 filters:", JSON.stringify(filters, null, 2));
+  console.log("📦 filters:", JSON.stringify(filters, null, 2));
 
-      let matched = false;
+  let matched = false;
 
-      await new Promise((resolve) => {
-        pool.subscribeMany(relayList, filters, {
-          onevent(event) {
-            if (event.created_at < lastTimestamp) {
-              lastTimestamp = event.created_at;
-            }
-            if (event.content && keyword && event.content.includes(keyword)) {
-              displayEvent(event);
-              matched = true;
-            }
-          },
-          oneose() {
-            resolve();
-          }
-        });
-      });
-
-      if (!matched) {
-        console.log("🔍 ヒットなし。さらに過去を検索できます。");
+  await new Promise((resolve) => {
+    pool.subscribeMany(relayList, filters, {
+      onevent(event) {
+        if (event.created_at < lastTimestamp) {
+          lastTimestamp = event.created_at;
+        }
+        if (event.content && keyword && event.content.includes(keyword)) {
+          displayEvent(event);
+          matched = true;
+        }
+      },
+      oneose() {
+        resolve();
       }
-    }
-  </script>
+    });
+  });
+
+  if (!matched) {
+    console.log("🔍 ヒットなし。さらに過去を検索できます。");
+  }
+}
+</script>
 </body>
 </html>
