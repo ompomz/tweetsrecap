@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8">
   <title>Nostr 投稿検索</title>
   <style>
     body { font-family: sans-serif; padding: 20px; }
@@ -13,12 +13,12 @@
 </head>
 <body>
   <h1>Nostr 投稿検索</h1>
-  <label>npub または NIP-05 アドレス（必須）</label><br />
-  <input type="text" id="npub" placeholder="npub1..." /><br />
+  <label>npub または NIP-05 アドレス（必須）</label><br/>
+  <input type="text" id="npub" placeholder="npub1..." /><br/>
   <label>リレーURL（任意）</label><br />
-  <input type="text" id="relay" placeholder="wss://..." /><br />
+  <input type="text" id="relay" placeholder="wss://..." /><br/>
   <label>検索キーワード（必須）</label><br />
-  <input type="text" id="keyword" placeholder="投稿に含まれる語句" /><br />
+  <input type="text" id="keyword" placeholder="投稿に含まれる語句" /><br/>
   <button onclick="handleSearch()">検索</button>
   <p id="status"></p>
   <div id="post-list"></div>
@@ -89,7 +89,7 @@
     const lowerKeyword = keyword.toLowerCase();
     return posts.filter(post => post.content.toLowerCase().includes(lowerKeyword));
   }
-    <script>
+  
   function renderPosts(posts, append = false) {
     const postList = document.getElementById("post-list");
     const statusMessage = document.getElementById("status");
