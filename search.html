@@ -67,14 +67,16 @@
       keyword = document.getElementById("keyword").value.trim();
 
       pubkey = await normalizePubkey(npubInput);
-      if (!pubkey) {
-        alert("有効な公開鍵を入力してください");
+      if (!pubkey || typeof pubkey !== "string" || pubkey.length !== 64) {
+        alert("有効な公開鍵（npubまたはhex）を入力してください");
+        console.error("❌ 公開鍵が不正です:", pubkey);
         return;
       }
 
       relayList = relayInput.split(",").map(r => r.trim()).filter(r => r.startsWith("wss://"));
       if (relayList.length === 0) {
-        alert("リレーURLを1つ以上入力してください");
+        alert("リレーURLを1つ以上入力してください（wss:// で始まるもの）");
+        console.error("❌ リレーリストが空です");
         return;
       }
 
@@ -82,6 +84,10 @@
     }
 
     async function searchMore() {
+      if (!pubkey || relayList.length === 0) {
+        alert("先に検索を実行してください");
+        return;
+      }
       await searchBatch();
     }
 
@@ -92,6 +98,8 @@
         until: lastTimestamp,
         limit: 500
       }];
+
+      console.log("📦 filters:", JSON.stringify(filters, null, 2));
 
       let matched = false;
 
@@ -113,7 +121,7 @@
       });
 
       if (!matched) {
-        console.log("ヒットなし。さらに過去を検索できます。");
+        console.log("🔍 ヒットなし。さらに過去を検索できます。");
       }
     }
   </script>
