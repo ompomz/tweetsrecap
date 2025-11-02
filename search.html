@@ -64,22 +64,22 @@
   }
 
   async function getUserRelays(pubkey) {
-    const relay = new NostrTools.Relay(RELAY_URL);
-    await relay.connect();
+    const filters = [{ kinds: [10002], authors: [pubkey], limit: 1 }];
+    const relaysToTry = [RELAY_URL];
+    const tempPool = new NostrTools.SimplePool();
 
     return new Promise((resolve) => {
-      const sub = relay.subscribe([{ kinds: [10002], authors: [pubkey], limit: 1 }]);
       let foundRelays = [];
 
-      sub.on("event", (event) => {
-        foundRelays = event.tags
-          .filter(tag => tag[0] === "r" && tag[1].startsWith("wss://"))
-          .map(tag => tag[1]);
-      });
-
-      sub.on("eose", () => {
-        relay.disconnect();
-        resolve(foundRelays.length > 0 ? foundRelays : [RELAY_URL]);
+      tempPool.subscribeMany(relaysToTry, filters, {
+        onevent(event) {
+          foundRelays = event.tags
+            .filter(tag => tag[0] === "r" && tag[1].startsWith("wss://"))
+            .map(tag => tag[1]);
+        },
+        oneose() {
+          resolve(foundRelays.length > 0 ? foundRelays : [RELAY_URL]);
+        }
       });
     });
   }
