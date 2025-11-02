@@ -73,7 +73,7 @@
 
     console.log("🔍 検索フィルター:", filters);
 
-    const sub = relay.subscribe([filters]);
+    const sub = relay.subscribe([filters], { id: "searchMyEvents" });
     let eventCount = 0;
 
     sub.on("event", (event) => {
@@ -117,7 +117,7 @@
 
     console.log("🔍 さらに過去の検索フィルター:", filters);
 
-    const sub = relay.subscribe([filters]);
+    const sub = relay.subscribe([filters], { id: "searchMore" });
     let eventCount = 0;
 
     sub.on("event", (event) => {
@@ -136,6 +136,6 @@
       sub.close();
     });
   }
-</script>  
+</script>
 </body>
 </html>
