@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Nostr検索ツール</title>
+</head>
+<body>
+    <h1>Nostr検索ツール</h1>
+    <input type="text" id="authorPubkey" placeholder="公開鍵">
+    <input type="text" id="searchWord" placeholder="検索ワード">
+    <button onclick="searchNostr()">検索</button>
+    <div id="results"></div>
+<button onclick="searchMore()">もっと見る</button>
+
+    <script src="https://unpkg.com/nostr-tools@2.17.2/lib/nostr.bundle.js"></script>
+<script>
+  const { relayInit } = window.NostrTools;
+
+  // グローバル変数
+  const RELAY_URL = "wss://relay.damus.io";
+  const relay = relayInit(RELAY_URL);
+  relay.connect();
+
+  let lastTimestamp = Math.floor(Date.now() / 1000);
+
+  // HTMLエスケープ関数（XSS対策）
+  function escapeHTML(str) {
+    return str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[m]));
+  }
+
+  // 検索結果を表示する関数
+  function displayEvent(event) {
+    const resultsDiv = document.getElementById("results");
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <strong>日時:</strong> ${new Date(event.created_at * 1000).toLocaleString()}<br>
+      <strong>内容:</strong><br>
+      <pre>${escapeHTML(event.content)}</pre>
+    `;
+    div.style.border = "1px solid #ccc";
+    div.style.margin = "10px";
+    div.style.padding = "10px";
+    resultsDiv.appendChild(div);
+  }
+
+  // 最初の検索（最新500件）
+  function searchMyEvents() {
+    const pubkey = document.getElementById("authorPubkey").value.trim();
+    const keyword = document.getElementById("searchWord").value.trim();
+    const resultsDiv = document.getElementById("results");
+    resultsDiv.innerHTML = "";
+    lastTimestamp = Math.floor(Date.now() / 1000); // リセット
+
+    if (!pubkey) {
+      alert("公開鍵を入力してください。");
+      return;
+    }
+
+    const sub = relay.sub([
+      {
+        kinds: [1, 42],
+        authors: [pubkey],
+        limit: 500,
+      },
+    ]);
+
+    sub.on("event", (event) => {
+      if (!keyword || event.content.includes(keyword)) {
+        displayEvent(event);
+      }
+      if (event.created_at < lastTimestamp) {
+        lastTimestamp = event.created_at;
+      }
+    });
+
+    sub.on("eose", () => {
+      console.log("検索完了");
+      sub.unsub();
+    });
+  }
+
+  // さらに過去を検索（"もっと見る"用）
+  function searchMore() {
+    const pubkey = document.getElementById("authorPubkey").value.trim();
+    const keyword = document.getElementById("searchWord").value.trim();
+
+    if (!pubkey) {
+      alert("公開鍵を入力してください。");
+      return;
+    }
+
+    const sub = relay.sub([
+      {
+        kinds: [1, 42],
+        authors: [pubkey],
+        until: lastTimestamp,
+        limit: 500,
+      },
+    ]);
+
+    sub.on("event", (event) => {
+      if (!keyword || event.content.includes(keyword)) {
+        displayEvent(event);
+      }
+      if (event.created_at < lastTimestamp) {
+        lastTimestamp = event.created_at;
+      }
+    });
+
+    sub.on("eose", () => {
+      console.log("さらに過去の検索完了");
+      sub.unsub();
+    });
+  }
+</script>  
+</body>
+</html>
