@@ -41,6 +41,13 @@
       return null;
     }
 
+    function escapeHTML(str) {
+      return str.replace(/[&<>"']/g, (m) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;',
+        '"': '&quot;', "'": '&#39;',
+      }[m]));
+    }
+
     function displayEvent(event) {
       const div = document.createElement("div");
       div.className = "event";
@@ -49,13 +56,6 @@
         <strong>内容:</strong><br>${escapeHTML(event.content)}
       `;
       document.getElementById("results").appendChild(div);
-    }
-
-    function escapeHTML(str) {
-      return str.replace(/[&<>"']/g, (m) => ({
-        '&': '&amp;', '<': '&lt;', '>': '&gt;',
-        '"': '&quot;', "'": '&#39;',
-      }[m]));
     }
 
     async function startSearch() {
@@ -101,7 +101,7 @@
             if (event.created_at < lastTimestamp) {
               lastTimestamp = event.created_at;
             }
-            if (event.content.includes(keyword)) {
+            if (event.content && keyword && event.content.includes(keyword)) {
               displayEvent(event);
               matched = true;
             }
