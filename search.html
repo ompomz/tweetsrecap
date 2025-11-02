@@ -25,7 +25,8 @@
     <script src="https://unpkg.com/nostr-tools@2.17.2/lib/nostr.bundle.js"></script>
 <script>
   const RELAY_URL = "wss://relay.nostr.band";
-  const relay = new NostrTools.Relay(RELAY_URL);
+  const pool = new NostrTools.SimplePool();
+  const relays = [RELAY_URL];
   let lastTimestamp = Math.floor(Date.now() / 1000);
 
   function escapeHTML(str) {
@@ -47,7 +48,7 @@
     document.getElementById("results").appendChild(div);
   }
 
-  async function searchMyEvents() {
+  function searchMyEvents() {
     const pubkey = document.getElementById("authorPubkey").value.trim();
     const keyword = document.getElementById("searchWord").value.trim();
     const resultsDiv = document.getElementById("results");
@@ -59,41 +60,34 @@
       return;
     }
 
-    console.log("🔌 リレー接続中:", RELAY_URL);
-    await relay.connect();
-    console.log("✅ リレー接続完了");
-
     const filters = {
       kinds: [1, 42],
+      authors: [pubkey],
       limit: 500,
     };
-    if (pubkey) {
-      filters.authors = [pubkey];
-    }
 
     console.log("🔍 検索フィルター:", filters);
 
-    const sub = relay.subscribe([filters], { id: "searchMyEvents" });
     let eventCount = 0;
 
-    sub.on("event", (event) => {
-      eventCount++;
-      console.log("📨 イベント受信:", event);
-      if (!keyword || event.content.includes(keyword)) {
-        displayEvent(event);
+    pool.subscribeMany(relays, [filters], {
+      onevent(event) {
+        eventCount++;
+        console.log("📨 イベント受信:", event);
+        if (!keyword || event.content.includes(keyword)) {
+          displayEvent(event);
+        }
+        if (event.created_at < lastTimestamp) {
+          lastTimestamp = event.created_at;
+        }
+      },
+      oneose() {
+        console.log(`✅ 検索完了（${eventCount} 件受信）`);
       }
-      if (event.created_at < lastTimestamp) {
-        lastTimestamp = event.created_at;
-      }
-    });
-
-    sub.on("eose", () => {
-      console.log(`✅ 検索完了（${eventCount} 件受信）`);
-      sub.close();
     });
   }
 
-  async function searchMore() {
+  function searchMore() {
     const pubkey = document.getElementById("authorPubkey").value.trim();
     const keyword = document.getElementById("searchWord").value.trim();
 
@@ -102,38 +96,31 @@
       return;
     }
 
-    console.log("🔌 リレー再接続:", RELAY_URL);
-    await relay.connect();
-    console.log("✅ 接続完了");
-
     const filters = {
       kinds: [1, 42],
+      authors: [pubkey],
       until: lastTimestamp,
       limit: 500,
     };
-    if (pubkey) {
-      filters.authors = [pubkey];
-    }
 
     console.log("🔍 さらに過去の検索フィルター:", filters);
 
-    const sub = relay.subscribe([filters], { id: "searchMore" });
     let eventCount = 0;
 
-    sub.on("event", (event) => {
-      eventCount++;
-      console.log("📨 過去イベント受信:", event);
-      if (!keyword || event.content.includes(keyword)) {
-        displayEvent(event);
+    pool.subscribeMany(relays, [filters], {
+      onevent(event) {
+        eventCount++;
+        console.log("📨 過去イベント受信:", event);
+        if (!keyword || event.content.includes(keyword)) {
+          displayEvent(event);
+        }
+        if (event.created_at < lastTimestamp) {
+          lastTimestamp = event.created_at;
+        }
+      },
+      oneose() {
+        console.log(`✅ さらに過去の検索完了（${eventCount} 件受信）`);
       }
-      if (event.created_at < lastTimestamp) {
-        lastTimestamp = event.created_at;
-      }
-    });
-
-    sub.on("eose", () => {
-      console.log(`✅ さらに過去の検索完了（${eventCount} 件受信）`);
-      sub.close();
     });
   }
 </script>
