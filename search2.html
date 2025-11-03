@@ -18,20 +18,21 @@
   <label>リレーURL（任意）</label><br />
   <input type="text" id="relay" placeholder="wss://..." /><br/>
   <label>検索キーワード（必須）</label><br />
-  <input type="text" id="keyword" placeholder="投稿に含まれる語句" /><br/>
-  <button onclick="handleSearch()">検索</button>
+  <input type="text" id="keyword" placeholder="投稿に含まれる語句" oninput="refilterAndRender()" />
+  <button onclick="fetchAndUpdatePosts()">検索</button>
+
   <p id="status"></p>
   <div id="post-list"></div>
   <button id="more-button" onclick="handleLoadMore()" style="display:none;">もっと探す</button>
   
   <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script>
-/* 設定 */
+/* --- 設定 --- */
 let DEFAULT_RELAY = 'wss://relay.nostr.band';
 let lastUntilTime = Math.floor(Date.now() / 1000);
 let fetchedPosts = [];
 
-/* 公開鍵正規化（npub / hex / nip05） */
+/* --- 公開鍵正規化（npub / hex / nip05） --- */
 async function normalizePubkey(input) {
   if (!input) return null;
   if (input.startsWith("npub1")) {
@@ -60,7 +61,7 @@ async function normalizePubkey(input) {
   return null;
 }
 
-/* リレーから投稿を取得（since, until は unix timestamp） */
+/* --- リレーから投稿を取得（since/until は unix timestamp） --- */
 async function fetchPosts(relayUrl, pubkey, sinceTime, untilTime) {
   const events = [];
   try {
@@ -78,7 +79,6 @@ async function fetchPosts(relayUrl, pubkey, sinceTime, untilTime) {
         relay.close();
         resolve(events);
       });
-      // タイムアウト（遅いリレー対策）
       setTimeout(() => {
         relay.close();
         resolve(events);
@@ -90,14 +90,14 @@ async function fetchPosts(relayUrl, pubkey, sinceTime, untilTime) {
   }
 }
 
-/* 単純なキーワードフィルタ（大文字小文字無視） */
+/* --- キーワードフィルタ（大文字小文字無視） --- */
 function filterPostsByKeyword(posts, keyword) {
   if (!keyword) return posts.slice();
-  const lowerKeyword = keyword.toLowerCase();
-  return posts.filter(post => (post.content || '').toLowerCase().includes(lowerKeyword));
+  const lower = keyword.toLowerCase();
+  return posts.filter(p => (p.content || '').toLowerCase().includes(lower));
 }
 
-/* HTMLエスケープ */
+/* --- HTMLエスケープ --- */
 function escapeHtml(str) {
   if (!str) return '';
   return String(str).replace(/[&<>"']/g, function (m) {
@@ -105,7 +105,7 @@ function escapeHtml(str) {
   });
 }
 
-/* 表示用（軽量表示：created_at, content, nevent） */
+/* --- 投稿表示（軽量表示：created_at, content, nevent） --- */
 function renderSimplifiedPosts(posts, append = false) {
   const postList = document.getElementById("post-list");
   const statusMessage = document.getElementById("status");
@@ -113,20 +113,19 @@ function renderSimplifiedPosts(posts, append = false) {
   if (!append) postList.innerHTML = '';
 
   if (posts.length === 0 && !append) {
-    statusMessage && (statusMessage.textContent = '見つかりませんでした。もっと探す？');
+    if (statusMessage) statusMessage.textContent = '見つかりませんでした。もっと探す？';
     const moreBtn = document.getElementById("more-button");
     if (moreBtn) moreBtn.style.display = 'block';
     return;
   }
 
   posts.forEach(post => {
-    const postElement = document.createElement('div');
-    postElement.className = 'post';
+    const el = document.createElement('div');
+    el.className = 'post';
 
     const postDate = new Date(post.created_at * 1000);
     const formattedDate = `${postDate.toLocaleDateString()} ${postDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
-    // post.nevent があれば使い、なければ生成（fetchedPosts の post には id/pubkey がある想定）
     let nevent = post.nevent;
     if (!nevent && post.id && post.pubkey) {
       try {
@@ -137,37 +136,32 @@ function renderSimplifiedPosts(posts, append = false) {
       }
     }
 
-    const link = nevent ? `<a href="https://ompomz.github.io/tweetsrecap/tweet?id=${nevent}" target="_blank" class="post-time">[${formattedDate}]</a>` : `<span class="post-time">[${formattedDate}]</span>`;
+    const link = nevent
+      ? `<a href="https://ompomz.github.io/tweetsrecap/tweet?id=${nevent}" target="_blank" class="post-time">[${formattedDate}]</a>`
+      : `<span class="post-time">[${formattedDate}]</span>`;
 
-    postElement.innerHTML = `
-      <div>
-        ${link}
-        &nbsp;
-        ${escapeHtml(post.content)}
-      </div>
-    `.trim();
-
-    postList.appendChild(postElement);
+    el.innerHTML = `${link} &nbsp; ${escapeHtml(post.content)}`;
+    postList.appendChild(el);
   });
 
-  statusMessage && (statusMessage.textContent = `表示中の投稿数：${postList.children.length} 件`);
+  if (statusMessage) statusMessage.textContent = `表示中の投稿数：${postList.children.length} 件`;
   const moreBtn = document.getElementById("more-button");
   if (moreBtn) moreBtn.style.display = 'block';
 }
 
-/* 保存：fetchedPosts と最古/最新タイムを localStorage に格納（軽量化して保存） */
+/* --- localStorage に保存（軽量化） --- */
 function savePostsToLocalStorage(newPosts = []) {
-  // 統合してユニーク化（id をキー）
   const all = fetchedPosts.concat(newPosts);
   const unique = Array.from(new Map(all.map(p => [p.id, p])).values());
   fetchedPosts = unique;
 
-  // 保存用に軽量化
   const simplified = unique.map(post => {
-    const eventPointer = { id: post.id, relays: [DEFAULT_RELAY], author: post.pubkey };
-    let nevent = post.nevent;
+    let nevent = post.nevent || '';
     try {
-      if (!nevent && post.id && post.pubkey) nevent = NostrTools.nip19.neventEncode(eventPointer);
+      if (!nevent && post.id && post.pubkey) {
+        const eventPointer = { id: post.id, relays: [DEFAULT_RELAY], author: post.pubkey };
+        nevent = NostrTools.nip19.neventEncode(eventPointer);
+      }
     } catch (e) {
       nevent = nevent || '';
     }
@@ -199,31 +193,38 @@ function savePostsToLocalStorage(newPosts = []) {
   }
 }
 
-/* 検索ボタンの処理（既存の fetchedPosts を保持しつつ新規取得を統合） */
-async function handleSearch() {
-  const npubInput = document.getElementById("npub").value.trim();
-  const relayInput = document.getElementById("relay").value.trim();
-  const keywordInput = document.getElementById("keyword").value.trim();
+/* --- 既存の fetchedPosts を使ってフィルタして表示 --- */
+function refilterAndRender() {
+  const keywordInput = (document.getElementById("keyword") && document.getElementById("keyword").value) || '';
+  const filtered = filterPostsByKeyword(fetchedPosts, keywordInput.trim());
+  renderSimplifiedPosts(filtered, false);
+}
+
+/* --- 投稿取得＋蓄積＋保存（検索ボタン） --- */
+async function fetchAndUpdatePosts() {
+  const npubInput = (document.getElementById("npub") && document.getElementById("npub").value) || '';
+  const relayInput = (document.getElementById("relay") && document.getElementById("relay").value) || '';
+  const keywordInput = (document.getElementById("keyword") && document.getElementById("keyword").value) || '';
   const statusMessage = document.getElementById("status");
   const postList = document.getElementById("post-list");
   const moreButton = document.getElementById("more-button");
 
   if (postList) postList.innerHTML = '';
-  statusMessage && (statusMessage.textContent = '検索中...');
+  if (statusMessage) statusMessage.textContent = '検索中...';
   if (moreButton) moreButton.style.display = 'none';
 
-  if (!npubInput || !keywordInput) {
-    statusMessage && (statusMessage.textContent = 'npubと検索キーワードは必須です。');
+  if (!npubInput.trim() || !keywordInput.trim()) {
+    if (statusMessage) statusMessage.textContent = 'npubと検索キーワードは必須です。';
     return;
   }
 
-  const pubkey = await normalizePubkey(npubInput);
+  const pubkey = await normalizePubkey(npubInput.trim());
   if (!pubkey) {
-    statusMessage && (statusMessage.textContent = 'npubまたはNIP-05の形式が正しくありません。');
+    if (statusMessage) statusMessage.textContent = 'npubまたはNIP-05の形式が正しくありません。';
     return;
   }
 
-  const relayUrl = relayInput || DEFAULT_RELAY;
+  const relayUrl = relayInput.trim() || DEFAULT_RELAY;
   const now = Math.floor(Date.now() / 1000);
   const oneWeekAgo = now - 7 * 24 * 60 * 60;
   lastUntilTime = now;
@@ -237,38 +238,33 @@ async function handleSearch() {
     lastUntilTime = oldest.created_at;
   }
 
-  // fetchedPosts に統合してユニーク化
-  const allPosts = fetchedPosts.concat(posts);
-  const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
-  fetchedPosts = uniquePosts;
-
-  // フィルタは蓄積された全体を対象にする
-  const filtered = filterPostsByKeyword(fetchedPosts, keywordInput);
-  renderSimplifiedPosts(filtered, false);
-
-  // 取得結果を永続化
+  // 蓄積＋ユニーク化＋保存
+  fetchedPosts = Array.from(new Map(fetchedPosts.concat(posts).map(p => [p.id, p])).values());
   savePostsToLocalStorage(posts);
+
+  // 表示は蓄積分全体をキーワードで絞る
+  refilterAndRender();
 }
 
-/* もっと探す（過去へ遡る） */
+/* --- もっと探す（過去へ遡る） --- */
 async function handleLoadMore() {
-  const npubInput = document.getElementById("npub").value.trim();
-  const relayInput = document.getElementById("relay").value.trim();
-  const keywordInput = document.getElementById("keyword").value.trim();
+  const npubInput = (document.getElementById("npub") && document.getElementById("npub").value) || '';
+  const relayInput = (document.getElementById("relay") && document.getElementById("relay").value) || '';
+  const keywordInput = (document.getElementById("keyword") && document.getElementById("keyword").value) || '';
   const statusMessage = document.getElementById("status");
 
-  if (!npubInput || !keywordInput) {
-    statusMessage && (statusMessage.textContent = 'npubと検索キーワードは必須です。');
+  if (!npubInput.trim() || !keywordInput.trim()) {
+    if (statusMessage) statusMessage.textContent = 'npubと検索キーワードは必須です。';
     return;
   }
 
-  const pubkey = await normalizePubkey(npubInput);
+  const pubkey = await normalizePubkey(npubInput.trim());
   if (!pubkey) {
-    statusMessage && (statusMessage.textContent = 'npubまたはNIP-05の形式が正しくありません。');
+    if (statusMessage) statusMessage.textContent = 'npubまたはNIP-05の形式が正しくありません。';
     return;
   }
 
-  const relayUrl = relayInput || DEFAULT_RELAY;
+  const relayUrl = relayInput.trim() || DEFAULT_RELAY;
   const newUntil = lastUntilTime;
   const newSince = newUntil - 7 * 24 * 60 * 60;
 
@@ -281,16 +277,15 @@ async function handleLoadMore() {
     lastUntilTime = oldest.created_at;
   }
 
-  // 蓄積して保存
+  // 蓄積＋保存
   fetchedPosts = Array.from(new Map(fetchedPosts.concat(posts).map(p => [p.id, p])).values());
   savePostsToLocalStorage(posts);
 
-  // 画面には今回取得分だけ追加表示（キーワードは現在の入力を使う）
-  const filtered = filterPostsByKeyword(posts, keywordInput);
-  renderSimplifiedPosts(filtered, true);
+  // 画面は蓄積全体を再フィルタして表示（自然な UX のため）
+  refilterAndRender();
 }
 
-/* ページ読み込み時：保存データを復元し、保存済みの最新以降だけ取得して追加する */
+/* --- ページ読み込み時：localStorage 復元 + 最新分のみ取得して追加 --- */
 window.addEventListener('load', async () => {
   try {
     const saved = localStorage.getItem('nostrPosts');
@@ -298,37 +293,35 @@ window.addEventListener('load', async () => {
 
     if (saved && latestFetchedAt > 0) {
       const posts = JSON.parse(saved);
-      // saved は simplified 形式（id, pubkey, created_at, content, nevent）
       fetchedPosts = posts.map(p => ({ id: p.id, pubkey: p.pubkey, created_at: p.created_at, content: p.content, nevent: p.nevent }));
 
-      // キーワードで初期フィルタして表示
-      const keyword = (document.getElementById("keyword") && document.getElementById("keyword").value || '').trim().toLowerCase();
-      const filtered = filterPostsByKeyword(fetchedPosts, keyword);
+      // キーワードで初期表示
+      const keyword = (document.getElementById("keyword") && document.getElementById("keyword").value) || '';
+      const filtered = filterPostsByKeyword(fetchedPosts, keyword.trim());
       renderSimplifiedPosts(filtered, false);
 
-      // 保存時の latest 以降の新規投稿だけ取得する
-      const npubInput = (document.getElementById("npub") && document.getElementById("npub").value || '').trim();
-      const relayInput = (document.getElementById("relay") && document.getElementById("relay").value || '').trim();
-      if (!npubInput) return;
+      // 保存済みの最新時刻以降だけ取得して追加表示
+      const npubInput = (document.getElementById("npub") && document.getElementById("npub").value) || '';
+      const relayInput = (document.getElementById("relay") && document.getElementById("relay").value) || '';
+      if (!npubInput.trim()) return;
 
-      const pubkey = await normalizePubkey(npubInput);
+      const pubkey = await normalizePubkey(npubInput.trim());
       if (!pubkey) return;
 
-      const relayUrl = relayInput || DEFAULT_RELAY;
+      const relayUrl = relayInput.trim() || DEFAULT_RELAY;
       const now = Math.floor(Date.now() / 1000);
       const newPosts = await fetchPosts(relayUrl, pubkey, latestFetchedAt + 1, now);
 
       if (newPosts.length > 0) {
-        // 保存と画面追加
         savePostsToLocalStorage(newPosts);
-        const filteredNew = filterPostsByKeyword(newPosts, keyword);
-        renderSimplifiedPosts(filteredNew, true);
+        // 画面は蓄積全体を再フィルタして表示
+        refilterAndRender();
       }
     }
   } catch (e) {
     console.warn("保存された投稿の復元に失敗:", e);
   }
 });
-</script>
+</script>  
 </body>
 </html>
