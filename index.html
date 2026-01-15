@@ -55,7 +55,7 @@ input[type="text"] { flex-grow: 1; }
 </div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script>
- let RELAY_URL = 'wss://relay.nostr.band';
+ let RELAY_URL = 'wss://nos.lol/';
  async function checkRelay(url) {
  try {
  const relay = NostrTools.relayInit(url);
@@ -71,7 +71,7 @@ input[type="text"] { flex-grow: 1; }
  const isMainAlive = await checkRelay(RELAY_URL);
  if (!isMainAlive) {
  console.warn(`[Relay Fallback] nostr.band が死んでるので nos.lol に切り替えます。`);
- RELAY_URL = 'wss://nos.lol'
+ RELAY_URL = 'wss://relay.damus.io/'
  }
  })();
  let fetchedPosts = [];
