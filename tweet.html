@@ -19,7 +19,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .container button:hover { background-color: #ffa347; }
 .header-section { display: flex; justify-content: flex-start; align-items: center; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px dashed #ddd; }
 #main-event { padding: 0.5rem 0; }
-#status { margin: 0.5rem 0rem; font-weight: bold; color: #ff99cc; }
+#status { margin: 0rem 0rem 1rem 0rem; font-weight: bold; color: #ff99cc; }
 .reactions-list { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.25rem 0rem 0.75rem 0rem; }
 .reactions-list img{ height: 1.25rem !important; object-fit: cover;}
 .reaction-group { display: flex; align-items: center; background-color: #eee; border-radius: 999px; padding: 0.2rem 0.5rem; font-size: 0.8rem; }
@@ -53,7 +53,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .post-content img.custom-emoji { vertical-align: middle; display: inline-block; height: 1.2rem; }
 .post-content ul, .post-content ol { list-style-position: inside; }
 .nostr-form { display: flex; flex-direction: row; align-items: center; gap: 0.5rem; padding-top: 0.25rem; }
-.form-input { flex: 1; min-width: 0; width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
+.form-input { color: #666; flex: 1; min-width: 0; width: 100%; max-width: 400px; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 1rem; }
 .form-button { flex-shrink: 0; padding: 0.5rem 1.2rem !important; }
 .footer-section { padding: 0.5rem 0; border-top: 1px dashed #ddd; }
 .hidden { display: none; }
@@ -63,30 +63,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 .close-button { color: #fff; font-size: 40px; font-weight: 700; cursor: pointer; transition: 0.3s; }
 .close-button:hover, .close-button:focus { color: #eee; text-decoration: none; cursor: pointer; }
 .custom-emoji-hover:hover { transform: scale(2.0); z-index: 10; }
+.post-image { max-height: 400px; object-fit: cover; }
 </style>
 </head>
 <body>
 <div id="header-placeholder"></div>
 <div class="container">
- <div class="header-section">
- <button onclick="goBack()">もどる</button>
- <button onclick="copyUrl()">シェア</button>
- </div>
- <div id="main-event"></div>
- <p id="status" class="hidden"></p>
- <div id="reactions-section" style="display: none;">
- <div id="reactions-list" class="reactions-list"></div>
- </div>
- <div id="related-events-section" style="display: none;">
- <div id="related-events-list" class="related-posts"></div>
- </div>
- <div class="footer-section">
- <button onclick="goBack()">もどる</button>
- </div>
+  <div class="header-section">
+    <button onclick="goBack()">もどる</button>
+    <button onclick="copyUrl()">シェア</button>
+    <button onclick="copyNevent()">コピー</button>
+  </div>
+  <div id="main-event"></div>
+  <p id="status" class="hidden"></p>
+  
+  <div id="reactions-section" style="display: none;">
+    <div id="reactions-list" class="reactions-list"></div>
+  </div>
+  
+  <div id="related-events-section" style="display: none;">
+    <div id="related-events-list" class="related-posts"></div>
+  </div>
+
+  <div class="footer-section">
+    <button onclick="goBack()">もどる</button>
+  </div>
 </div>
-<div id="modal" class="modal"><div class="modal-content"><span class="close-button">&times;</span><img id="modal-image" class="modal-image" src="" alt="拡大画像"></div></div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://ompomz.github.io/tweetsrecap/utility.js"></script>
 <script>
 function goBack() {
   if (window.history.length > 1) {
@@ -103,6 +108,21 @@ function copyUrl() {
     console.error('URLのコピーに失敗しました:', err);
     alert('URLのコピーに失敗しました。');
   });
+}
+
+function copyNevent() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const id = urlParams.get('id');
+  
+  if (id && (id.startsWith('nevent1') || id.startsWith('note1'))) {
+    navigator.clipboard.writeText(id).then(() => {
+      alert('イベントID(nevent)をコピーしました！');
+    }).catch(err => {
+      console.error('コピー失敗:', err);
+    });
+  } else {
+    alert('コピーできるイベントIDが見つかりません。');
+  }
 }
 
 const mainEventContainer = document.getElementById('main-event');
@@ -134,20 +154,6 @@ function showStatus(message) {
   } else {
     statusElement.classList.add('hidden');
   }
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return str.replace(/[&<>"']/g, function(match) {
-    const escape = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    };
-    return escape[match];
-  });
 }
 
 function createNostrLink(nip19) {
@@ -186,29 +192,29 @@ function replaceCustomEmojis(text, customEmojiMap) {
 }
 
 async function formatPostContent(content, tags) {
-  console.log('🔄 formatPostContent: 投稿内容のフォーマットを開始します');
-  let formattedContent = escapeHtml(content);
+  // 1. エスケープと改行（ここは共通）
+  let formattedContent = MyNostrUtils.escapeHtml(content);
   formattedContent = formattedContent.replace(/\n/g, '<br>');
 
+  // 2. URLを判定して、画像ならそのまま表示、それ以外はリンクにする
   const urlRegex = /\b(https?:\/\/[^\s]+)/g;
   formattedContent = formattedContent.replace(urlRegex, (url) => {
     const imageExtensions = /\.(png|jpe?g|gif|webp|svg|heic|avif)$/i;
     if (imageExtensions.test(url)) {
-      console.log(`🖼️ URLを画像タグに変換: ${url}`);
-      return `<a href="#" onclick="event.preventDefault(); openModal(this)"><img src="${url}" alt="post image" class="post-image"></a>`;
+      return `<img src="${url}" alt="post image" class="post-image" style="max-width:100%; height:auto; display:block; margin:10px 0;">`;
     }
-    console.log(`🔗 URLをリンクに変換: ${url}`);
     return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
   });
 
+  // 3. Nostr IDの処理
   const nostrIdsToFetch = [];
   const placeholderRegex = /nostr:(n(?:event|note|pub|profile|addr)1\S+)/g;
   formattedContent = formattedContent.replace(placeholderRegex, (match, nip19) => {
     nostrIdsToFetch.push(nip19);
-    console.log(`📄 Nostr IDをプレースホルダーに置き換え: ${nip19}`);
     return `<div data-nostr-id="${nip19}"></div>`;
   });
 
+  // 4. カスタム絵文字
   const customEmojis = tags.filter(t => t[0] === 'emoji');
   const customEmojiMap = new Map();
   customEmojis.forEach(([_, shortcode, url]) => {
@@ -216,22 +222,17 @@ async function formatPostContent(content, tags) {
   });
   formattedContent = replaceCustomEmojis(formattedContent, customEmojiMap);
 
+  // 5. 非同期でカード挿入（ここは変更なし）
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = formattedContent;
+  if (nostrIdsToFetch.length > 0) {
+    await Promise.all(nostrIdsToFetch.map(async (nostrId) => {
+      const cardHtml = await createNostrCard(nostrId);
+      const placeholder = tempDiv.querySelector(`[data-nostr-id="${nostrId}"]`);
+      if (placeholder) { placeholder.outerHTML = cardHtml; }
+    }));
+  }
 
-  console.log(`🚀 ${nostrIdsToFetch.length}個のNostrカードを非同期で取得開始...`);
-  await Promise.all(nostrIdsToFetch.map(async (nostrId) => {
-    const cardHtml = await createNostrCard(nostrId);
-    const placeholder = tempDiv.querySelector(`[data-nostr-id="${nostrId}"]`);
-    if (placeholder) {
-      placeholder.outerHTML = cardHtml;
-      console.log(`✅ Nostrカードを挿入完了: ${nostrId}`);
-    } else {
-      console.warn(`⚠️ プレースホルダーが見つかりません: ${nostrId}`);
-    }
-  }));
-
-  console.log('🎉 formatPostContent: 処理完了');
   return tempDiv.innerHTML;
 }
 
@@ -272,8 +273,8 @@ function createProfileHtml(pubkey, isLink = true) {
     <div class="profile">
       <img src="${profilePicture}" class="profile-image" alt="User profile image">
       <div>
-        <span class="profile-name">${escapeHtml(profile.name || 'Unknown')}</span>
-        <span class="profile-nip05">${profile.nip05 ? escapeHtml(profile.nip05) : npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
+        <span class="profile-name">${MyNostrUtils.escapeHtml(profile.name || 'Unknown')}</span>
+        <span class="profile-nip05">${profile.nip05 ? MyNostrUtils.escapeHtml(profile.nip05) : npub.substring(0, 13) + '...'}</span>
       </div>
     </div>
   `;
@@ -302,7 +303,7 @@ async function renderMainEvent(event, customEmojiMap) {
     <div class="post-content">${contentHtml}</div>
     <div class="post-info">
       <span>${date}</span>
-      ${client ? `<span>via ${escapeHtml(client)}</span>` : ''}
+      ${client ? `<span>via ${MyNostrUtils.escapeHtml(client)}</span>` : ''}
     </div>
   `;
   mainEventContainer.innerHTML = html;
@@ -354,16 +355,28 @@ function renderReactions(reactions, customEmojiMap) {
   console.log('✅ リアクションのレンダリングが完了しました');
 }
 
-function renderRelatedEvents(posts, reposts, quotes) {
-  console.log(`🔗 関連イベントのレンダリングを開始: 投稿(${posts.length}), リポスト(${reposts.length}), 引用(${quotes.length})`);
+async function renderRelatedEvents(posts, reposts, quotes) {
+  console.log(`🔗 関連イベントのレンダリングを開始`);
   const allRelatedEvents = [...posts, ...reposts, ...quotes];
-  allRelatedEvents.sort((a, b) => b.created_at - a.created_at);
+  allRelatedEvents.sort((a, b) => a.created_at - b.created_at);
 
   relatedEventsList.innerHTML = '';
-  allRelatedEvents.forEach(async event => {
+
+  for (const event of allRelatedEvents) {
     const date = new Date(event.created_at * 1000).toLocaleString();
     let postContentHtml = '';
     let postTypeLabel = '';
+
+    // relay情報を含めず、IDと作者の公開鍵だけで生成する
+    let nevent;
+    try {
+      nevent = window.NostrTools.nip19.neventEncode({
+        id: event.id,
+        author: event.pubkey
+      });
+    } catch (e) {
+      nevent = window.NostrTools.nip19.noteEncode(event.id);
+    }
 
     switch (event.kind) {
       case 1:
@@ -372,10 +385,8 @@ function renderRelatedEvents(posts, reposts, quotes) {
         break;
       case 6:
         postTypeLabel = 'リポスト';
-        const repostUser = userProfiles[event.pubkey] || {
-          name: 'Unknown'
-        };
-        postContentHtml = `<div class="post-content">${escapeHtml(repostUser.name)}さんがリポストしました</div>`;
+        const repostUser = userProfiles[event.pubkey] || { name: 'Unknown' };
+        postContentHtml = `<div class="post-content">${MyNostrUtils.escapeHtml(repostUser.name)}さんがリポストしました</div>`;
         break;
       case 16:
         postTypeLabel = '引用';
@@ -387,14 +398,15 @@ function renderRelatedEvents(posts, reposts, quotes) {
       <div class="related-post-card">
         ${createProfileHtml(event.pubkey)}
         <div class="post-info">
-          <span>${date}</span>
-          <span>${postTypeLabel}</span>
+          <span class="post-date">${date}</span>
+          <a href="?id=${nevent}" class="post-link-label">${postTypeLabel}</a>
         </div>
         ${postContentHtml}
       </div>
     `;
     relatedEventsList.innerHTML += html;
-  });
+  }
+  
   relatedEventsSection.style.display = 'block';
   console.log('✅ 関連イベントのレンダリングが完了しました');
 }
@@ -449,10 +461,10 @@ async function createNostrCard(nostrId) {
           <div class="related-post-card">
             ${createProfileHtml(pubkey)}
             <div class="post-info">
-              <span>${npub.substring(0, 8) + '...' + npub.slice(-4)}</span>
+              <span>${npub.substring(0, 13) + '...'}</span>
             </div>
             <div class="post-content">
-              <p class="post-text">${escapeHtml(profile.about || '')}</p>
+              <p class="post-text">${MyNostrUtils.escapeHtml(profile.about || '')}</p>
             </div>
           </div>
         </a>`;
@@ -501,140 +513,159 @@ async function createNostrCard(nostrId) {
 }
 
 async function renderEventDetail(nostrId) {
-  showStatus('イベントデータを取得中...');
-  console.log(`🔍 イベント詳細の取得を開始: ${nostrId}`);
+  showStatus('本体データを取得中...');
+
+  const timeout = (ms) => new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('タイムアウト')), ms)
+  );
+
+  let searchRelays = FALLBACK_RELAYS;
+
   try {
     const decoded = window.NostrTools.nip19.decode(nostrId);
-    const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
-    const until = Math.floor(Date.now() / 1000);
+    const recommendedRelays = decoded.data.relays || [];
+    searchRelays = [...new Set([...recommendedRelays, ...FALLBACK_RELAYS])];
+    
     let eventId;
     let filters = {};
+    const until = Math.floor(Date.now() / 1000);
 
     switch (decoded.type) {
       case 'note':
       case 'nevent':
         eventId = decoded.data.id || decoded.data;
-        filters = {
-          ids: [eventId]
-        };
-        console.log('📄 note/nevent IDを検出');
+        filters = { ids: [eventId] };
         break;
       case 'naddr':
         eventId = decoded.data.id;
-        filters = {
-          authors: [decoded.data.pubkey],
-          kinds: [decoded.data.kind],
-          '#d': [decoded.data.identifier]
-        };
-        console.log('📌 naddr IDを検出');
+        filters = { authors: [decoded.data.pubkey], kinds: [decoded.data.kind], '#d': [decoded.data.identifier] };
         break;
       default:
         showStatus('エラー: 無効なID形式です。');
-        console.error('❌ 無効なID形式です:', decoded.type);
         return;
     }
 
-    const mainEventPromise = pool.get(relays, { ...filters,
-      until: until,
-      limit: 1
-    });
-    const relatedEventsPromise = pool.list(relays, [{
-      '#e': [eventId],
-      kinds: [1, 6, 7, 16],
-      until: until
-    }]);
-
-    console.log('⏳ メインイベントと関連イベントのデータを同時に取得中...');
-    const [mainEvent, relatedEvents] = await Promise.all([mainEventPromise, relatedEventsPromise]);
+    // --- ① まずは「メインイベント」だけを最優先で取得 ---
+    const mainEvent = await Promise.race([
+      pool.get(searchRelays, { ...filters, until, limit: 1 }),
+      timeout(10000)
+    ]);
 
     if (!mainEvent) {
       showStatus('イベントが見つかりませんでした');
-      console.warn('⚠️ メインイベントが見つかりませんでした。');
+      pool.close(searchRelays);
       return;
     }
-    console.log(`✅ メインイベントが見つかりました: kind=${mainEvent.kind}`);
 
-    const allEventsWithTags = [mainEvent, ...relatedEvents];
-    const customEmojiMap = new Map();
-    allEventsWithTags.forEach(event => {
-      event.tags.filter(t => t[0] === 'emoji').forEach(([_, shortcode, url]) => {
-        if (!customEmojiMap.has(`:${shortcode}:`)) {
-          customEmojiMap.set(`:${shortcode}:`, url);
-        }
-      });
+    // --- ② メインイベントのプロフィールだけ先に取って表示！ ---
+    showStatus('本体を表示中...');
+    await fetchProfiles([mainEvent.pubkey]); // メインの作者だけ先に
+    
+    // 絵文字マップ（まずはメインイベント分だけ）
+    const mainEmojiMap = new Map();
+    mainEvent.tags.filter(t => t[0] === 'emoji').forEach(([_, code, url]) => {
+      mainEmojiMap.set(`:${code}:`, url);
     });
 
-    const pubkeysToFetch = new Set();
-    pubkeysToFetch.add(mainEvent.pubkey);
-    relatedEvents.forEach(e => pubkeysToFetch.add(e.pubkey));
+    // ここで一旦画面に表示！
+    await renderMainEvent(mainEvent, mainEmojiMap);
 
-    console.log(`👤 関連プロフィールをキャッシュに読み込み中: ${pubkeysToFetch.size}件`);
-    await fetchProfiles(Array.from(pubkeysToFetch));
+    // --- ③ そのあと「関連イベント」をゆっくり取得 ---
+    showStatus('関連イベントを読み込み中...');
+    const relatedEvents = await pool.list(searchRelays, [
+      { '#e': [eventId], kinds: [1, 6, 7, 16], until }
+    ]);
 
-    await renderMainEvent(mainEvent, customEmojiMap);
+    if (relatedEvents.length > 0) {
+      // 関連イベント用のプロフィールと絵文字を補充
+      const pubkeys = new Set(relatedEvents.map(e => e.pubkey));
+      await fetchProfiles(Array.from(pubkeys));
 
-    const reactions = relatedEvents.filter(e => e.kind === 7);
-    const posts = relatedEvents.filter(e => e.kind === 1);
-    const reposts = relatedEvents.filter(e => e.kind === 6);
-    const quotes = relatedEvents.filter(e => e.kind === 16);
+      const fullEmojiMap = new Map(mainEmojiMap);
+      relatedEvents.forEach(ev => {
+        ev.tags.filter(t => t[0] === 'emoji').forEach(([_, code, url]) => {
+          fullEmojiMap.set(`:${code}:`, url);
+        });
+      });
 
-    if (reactions.length > 0) {
-      renderReactions(reactions, customEmojiMap);
-    }
-    if (posts.length > 0 || reposts.length > 0 || quotes.length > 0) {
-      renderRelatedEvents(posts, reposts, quotes);
+      // リアクションとリプライを順次レンダリング
+      const reactions = relatedEvents.filter(e => e.kind === 7);
+      const posts = relatedEvents.filter(e => e.kind === 1);
+      const reposts = relatedEvents.filter(e => e.kind === 6);
+      const quotes = relatedEvents.filter(e => e.kind === 16);
+
+      if (reactions.length > 0) renderReactions(reactions, fullEmojiMap);
+      if (posts.length || reposts.length || quotes.length) {
+        renderRelatedEvents(posts, reposts, quotes);
+      }
     }
 
     showStatus('');
-    console.log('🎉 すべての処理が完了しました。');
+    pool.close(searchRelays); 
+    console.log('🔌 完了：すべての読み込みが終わったので解放しました。');
+
   } catch (err) {
-    console.error('❌ イベントの取得中にエラーが発生しました:', err);
-    showStatus('イベントの取得中にエラーが発生しました。');
+    if (err.message === 'タイムアウト') {
+      showStatus('タイムアウトしました。一部のデータが表示されていない可能性があります。');
+    } else {
+      console.error('❌ Error:', err);
+      showStatus('取得中にエラーが発生しました。');
+    }
+    if (searchRelays) pool.close(searchRelays);
   }
 }
 
 async function renderProfileDetail(nostrId) {
   showStatus('プロフィール情報を取得中...');
-  console.log(`🔍 プロフィール詳細の取得を開始: ${nostrId}`);
+  
+  const timeout = (ms) => new Promise((_, reject) => 
+    setTimeout(() => reject(new Error('タイムアウト')), ms)
+  );
+
+  let searchRelays = FALLBACK_RELAYS;
+
   try {
     const decoded = window.NostrTools.nip19.decode(nostrId);
     if (decoded.type !== 'npub' && decoded.type !== 'nprofile') {
       showStatus('エラー: 無効なnpubまたはnprofile形式です。');
-      console.error('❌ 無効なプロフィールID形式です:', decoded.type);
       return;
     }
 
-    const relays = (decoded.data.relays && decoded.data.relays.length > 0) ? decoded.data.relays : FALLBACK_RELAYS;
+    const recommendedRelays = decoded.data.relays || [];
+    searchRelays = [...new Set([...recommendedRelays, ...FALLBACK_RELAYS])];
     const pubkey = decoded.data.id || decoded.data;
     const until = Math.floor(Date.now() / 1000);
 
-    console.log(`🚀 リレーからプロフィールイベントを取得中: ${pubkey}`);
-    const profileEvent = await pool.get(relays, {
-      kinds: [0],
-      authors: [pubkey],
-      until: until,
-      limit: 1
-    });
+    console.log(`🌐 接続リレー (プロフィール): ${searchRelays.join(', ')}`);
+
+    // 【タイムアウト導入】10秒経ったら諦める
+    const profileEvent = await Promise.race([
+      pool.get(searchRelays, {
+        kinds: [0],
+        authors: [pubkey],
+        until: until,
+        limit: 1
+      }),
+      timeout(10000)
+    ]);
 
     if (!profileEvent) {
       showStatus('プロフィールが見つかりませんでした。');
-      console.warn('⚠️ プロフィールイベントが見つかりませんでした。');
+      pool.close(searchRelays);
       return;
     }
-    console.log('✅ プロフィールイベントが見つかりました。');
+
     const profile = JSON.parse(profileEvent.content);
     const npub = window.NostrTools.nip19.npubEncode(pubkey);
 
+    // About文のフォーマット用内部関数
     function formatAboutContent(content, tags) {
-      console.log('📝 About meの内容をフォーマット中...');
       if (!content) return '';
-
-      let formattedContent = escapeHtml(content);
+      let formattedContent = MyNostrUtils.escapeHtml(content);
       formattedContent = formattedContent.replace(/\n/g, '<br>');
 
-      const customEmojis = tags.filter(t => t[0] === 'emoji');
       const customEmojiMap = new Map();
-      customEmojis.forEach(([_, shortcode, url]) => {
+      tags.filter(t => t[0] === 'emoji').forEach(([_, shortcode, url]) => {
         const imageTag = `<img src="${url}" alt="${shortcode}" class="custom-emoji">`;
         customEmojiMap.set(`:${shortcode}:`, imageTag);
       });
@@ -645,12 +676,8 @@ async function renderProfileDetail(nostrId) {
       });
 
       formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
-        if (url.includes('imgur.com')) {
-          return url;
-        }
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+        return url.includes('imgur.com') ? url : `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
       });
-      console.log('✅ About meのフォーマットが完了しました。');
       return formattedContent;
     }
 
@@ -661,7 +688,7 @@ async function renderProfileDetail(nostrId) {
         <div class="profile-header">
           <img src="${profile.picture || DEFAULT_PROFILE_IMAGE}" alt="Profile Picture" class="profile-picture">
           <div class="profile-info-container">
-            <h2 class="profile-name">${escapeHtml(profile.name)}</h2>
+            <h2 class="profile-name">${MyNostrUtils.escapeHtml(profile.name || 'No Name')}</h2>
             <div class="npub-container">
               <span id="npub-text" class="npub-text">${npub}</span>
               <svg id="copy-npub-icon" class="copy-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -669,7 +696,7 @@ async function renderProfileDetail(nostrId) {
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
             </div>
-            <p class="nip05">${profile.nip05 ? escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
+            <p class="nip05">${profile.nip05 ? MyNostrUtils.escapeHtml(profile.nip05) : 'NIP-05未設定'}</p>
           </div>
         </div>
         <p class="about-text">${aboutHtml}</p>
@@ -677,23 +704,31 @@ async function renderProfileDetail(nostrId) {
 
     mainEventContainer.innerHTML = html;
 
+    // コピー機能の設定
     const copyIcon = document.getElementById('copy-npub-icon');
-    const npubText = document.getElementById('npub-text');
-    copyIcon.onclick = async () => {
-      try {
-        await navigator.clipboard.writeText(npub);
-        alert('npubがクリップボードにコピーされました！');
-      } catch (err) {
-        console.error('npubのコピーに失敗しました:', err);
-        alert('npubのコピーに失敗しました。');
-      }
-    };
+    if (copyIcon) {
+      copyIcon.onclick = async () => {
+        try {
+          await navigator.clipboard.writeText(npub);
+          alert('npubをコピーしました！');
+        } catch (err) {
+          alert('コピーに失敗しました。');
+        }
+      };
+    }
 
     showStatus('');
-    console.log('🎉 プロフィール詳細の表示が完了しました。');
+    pool.close(searchRelays); 
+    console.log('🔌 完了：プロフィール接続を解放しました。');
+
   } catch (err) {
-    console.error('❌ プロフィール取得中にエラー:', err);
-    showStatus('プロフィールの取得中にエラーが発生しました。');
+    if (err.message === 'タイムアウト') {
+      showStatus('リレーの応答が遅いため、プロフィール取得を中断しました。');
+    } else {
+      console.error('❌ Error:', err);
+      showStatus('プロフィールの取得中にエラーが発生しました。');
+    }
+    if (searchRelays) pool.close(searchRelays);
   }
 }
 
@@ -721,37 +756,6 @@ function renderInputForm() {
   });
 }
 
-function openModal(linkElement) {
-  const imageUrl = linkElement.querySelector('img').src;
-  const modal = document.getElementById('modal');
-  const modalImage = document.getElementById('modal-image');
-  const modalContent = document.querySelector('.modal-content');
-
-  modal.style.display = "block";
-  modalImage.src = imageUrl;
-  modalImage.onload = () => {
-    const imgWidth = modalImage.naturalWidth;
-    const imgHeight = modalImage.naturalHeight;
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-
-    if (imgWidth > imgHeight) {
-      modalContent.style.width = '80vw';
-      modalContent.style.height = 'auto';
-    } else {
-      modalContent.style.width = 'auto';
-      modalContent.style.height = '80vh';
-    }
-  };
-}
-
-function closeModal() {
-  const modal = document.getElementById('modal');
-  const modalImage = document.getElementById('modal-image');
-  modal.style.display = "none";
-  modalImage.src = "";
-}
-
 window.onload = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const id = urlParams.get('id');
@@ -768,24 +772,8 @@ window.onload = () => {
   } else {
     renderInputForm();
   }
-
-  const modal = document.getElementById('modal');
-  const closeButton = document.querySelector(".close-button");
-
-  closeButton.addEventListener('click', closeModal);
-
-  modal.addEventListener('click', (event) => {
-    if (event.target === modal) {
-      closeModal();
-    }
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === "Escape" && modal.style.display === "block") {
-      closeModal();
-    }
-  });
 };
+
 </script>
 <script src="https://ompomz.github.io/header/loadHeader.js"></script>
 </body>
