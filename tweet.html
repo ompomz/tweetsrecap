@@ -581,7 +581,7 @@ async function renderEventDetail(nostrId) {
     if (jumpBtn) {
         const npub = window.NostrTools.nip19.npubEncode(mainEvent.pubkey);
         // okkake側でnevent1...を受け取れる想定
-        const okkakeUrl = `https://ompomz.github.io/okkake/?id=${nostrId}&follow=${npub}`;
+        const okkakeUrl = `https://ompomz.github.io/flowgazer/okkake/?id=${nostrId}&follow=${npub}`;
         
         jumpBtn.style.display = 'inline-block';
         jumpBtn.onclick = () => window.open(okkakeUrl, '_blank');
