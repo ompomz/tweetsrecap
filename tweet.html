@@ -72,7 +72,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
   <div class="header-section">
     <button onclick="goBack()">もどる</button>
     <button onclick="copyUrl()">シェア</button>
-    <button onclick="copyNevent()">コピー</button>
+    <button id="copy-nevent-btn" onclick="copyNevent()" style="display: none;">コピー</button>
   </div>
   <div id="main-event"></div>
   <p id="status" class="hidden"></p>
@@ -87,11 +87,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helv
 
   <div class="footer-section">
     <button onclick="goBack()">もどる</button>
+    <button id="jump-to-okkake" style="display: none;">このときにジャンプ</button>
   </div>
 </div>
 <script src="https://unpkg.com/nostr-tools@1.17.0/lib/nostr.bundle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://ompomz.github.io/tweetsrecap/utility.js"></script>
+<script src="./utility.js"></script>
 <script>
 function goBack() {
   if (window.history.length > 1) {
@@ -569,6 +570,22 @@ async function renderEventDetail(nostrId) {
 
     // ここで一旦画面に表示！
     await renderMainEvent(mainEvent, mainEmojiMap);
+
+    // ★ ここに追加：ボタンの表示とジャンプ先設定
+    // 1. コピーボタンを表示
+    const copyBtn = document.getElementById('copy-nevent-btn');
+    if (copyBtn) copyBtn.style.display = 'inline-block';
+
+    // 2. okkakeジャンプボタンを設定して表示
+    const jumpBtn = document.getElementById('jump-to-okkake');
+    if (jumpBtn) {
+        const npub = window.NostrTools.nip19.npubEncode(mainEvent.pubkey);
+        // okkake側でnevent1...を受け取れる想定
+        const okkakeUrl = `https://ompomz.github.io/okkake/?id=${nostrId}&follow=${npub}`;
+        
+        jumpBtn.style.display = 'inline-block';
+        jumpBtn.onclick = () => window.open(okkakeUrl, '_blank');
+    }
 
     // --- ③ そのあと「関連イベント」をゆっくり取得 ---
     showStatus('関連イベントを読み込み中...');

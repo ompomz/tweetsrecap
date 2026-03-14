@@ -163,12 +163,27 @@ const MyNostrUtils = {
     },
 
     /**
-     * テキスト内のURLをすべて検索してリンクに置き換える
+     * テキスト内のURLおよびnostr識別子をすべて検索してリンクに置き換える
      */
     linkify(text) {
-        const urlRegex = /https?:\/\/[\w/:%#\$&\?\(\)~\.=\+\-]+/g;
-        return text.replace(urlRegex, (url) => {
-            return this.parseUrl(url);
+        // URL用の正規表現と、nostr:で始まる識別子用の正規表現を統合
+        const combinedRegex = /(https?:\/\/[\w/:%#\$&\?\(\)~\.=\+\-]+)|(nostr:[a-z0-9]+1[a-z0-9]+)/gi;
+
+        return text.replace(combinedRegex, (match) => {
+            // 1. nostr: で始まる場合
+            if (match.toLowerCase().startsWith("nostr:")) {
+                const nip19 = match.substring(6); // "nostr:" を削る
+                
+                // tweetsrecap の詳細画面へ飛ばす
+                // styleなどは既存の .nostr-ref クラスに合わせつつ、少し区別できるようにしています
+                return `<a href="https://ompomz.github.io/tweetsrecap/tweet?id=${nip19}" 
+                           target="_blank" 
+                           rel="noreferrer" 
+                           class="nostr-ref">nostr:${nip19.substring(0, 10)}...</a>`;
+            }
+
+            // 2. 通常のURLの場合（既存の parseUrl を利用）
+            return this.parseUrl(match);
         });
     },
 
