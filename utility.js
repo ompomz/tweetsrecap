@@ -149,41 +149,37 @@ const MyNostrUtils = {
     /**
      * URLを判定して、画像/動画/リンクのHTML要素(または文字列)を返す
      */
-    parseUrl(url) {
-        const isImage = /\.(jpeg|jpg|gif|png|webp|avif)$/i.test(url);
+    parseUrl(url, options = { expandMedia: false }) {
+        const isImage = /\.(jpeg|jpg|gif|png|webp|avif|heic|svg)$/i.test(url);
         const isVideo = /\.(mp4|webm|ogv|mov)$/i.test(url);
 
         if (isImage || isVideo) {
+            // オプションで「メディア展開」が有効な場合
+            if (options.expandMedia) {
+                if (isImage) return `<img src="${url}" alt="image" class="post-image" style="max-width:100%; height:auto; display:block; margin:10px 0;">`;
+                if (isVideo) return `<video src="${url}" controls class="post-video" style="max-width:100%; height:auto; display:block; margin:10px 0;"></video>`;
+            }
+
+            // デフォルト（従来通り）：モーダル用のリンクを返す
             const label = isImage ? '[画像を表示]' : '[動画を表示]';
-            // 文字列として返すと扱いやすいので、ここではHTML文字列で生成
             return `<a href="#" class="nostr-ref" onclick="event.preventDefault(); if(window.openModal) window.openModal('${url}')">${label}</a>`;
         }
 
-        return `<a href="${url}" target="_blank" rel="noreferrer" class="nostr-ref">${url}</a>`;
+        // 画像・動画以外
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nostr-ref">${url}</a>`;
     },
 
-    /**
-     * テキスト内のURLおよびnostr識別子をすべて検索してリンクに置き換える
-     */
-    linkify(text) {
-        // URL用の正規表現と、nostr:で始まる識別子用の正規表現を統合
-        const combinedRegex = /(https?:\/\/[\w/:%#\$&\?\(\)~\.=\+\-]+)|(nostr:[a-z0-9]+1[a-z0-9]+)/gi;
+    // linkify も options を受け取る
+    linkify(text, options = { expandMedia: false }) {
+        const combinedRegex = /(https?:\/\/[\w/:%#\$&\?\(\)~\.=\+\-;\*!]+)|(nostr:[a-z0-9]+1[a-z0-9]+)/gi;
 
         return text.replace(combinedRegex, (match) => {
-            // 1. nostr: で始まる場合
             if (match.toLowerCase().startsWith("nostr:")) {
-                const nip19 = match.substring(6); // "nostr:" を削る
-                
-                // tweetsrecap の詳細画面へ飛ばす
-                // styleなどは既存の .nostr-ref クラスに合わせつつ、少し区別できるようにしています
-                return `<a href="https://ompomz.github.io/tweetsrecap/tweet?id=${nip19}" 
-                           target="_blank" 
-                           rel="noreferrer" 
-                           class="nostr-ref">nostr:${nip19.substring(0, 10)}...</a>`;
+                const nip19 = match.substring(6);
+                return `<a href="https://ompomz.github.io/tweetsrecap/tweet?id=${nip19}" target="_blank" rel="noreferrer" class="nostr-ref">nostr:${nip19.substring(0, 10)}...</a>`;
             }
-
-            // 2. 通常のURLの場合（既存の parseUrl を利用）
-            return this.parseUrl(match);
+            // parseUrl にオプションを渡す
+            return this.parseUrl(match, options);
         });
     },
 
