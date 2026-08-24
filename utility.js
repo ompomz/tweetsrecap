@@ -176,7 +176,7 @@ const MyNostrUtils = {
         return text.replace(combinedRegex, (match) => {
             if (match.toLowerCase().startsWith("nostr:")) {
                 const nip19 = match.substring(6);
-                return `<a href="https://ompomz.github.io/tweetsrecap/tweet?id=${nip19}" target="_blank" rel="noreferrer" class="nostr-ref">nostr:${nip19.substring(0, 10)}...</a>`;
+                return `<a href="https://ompomz.github.io/flowgazer/tweet?id=${nip19}" target="_blank" rel="noreferrer" class="nostr-ref">nostr:${nip19.substring(0, 10)}...</a>`;
             }
             // parseUrl にオプションを渡す
             return this.parseUrl(match, options);
