@@ -38,7 +38,19 @@ input[type="text"] { flex-grow: 1; }
 <div class="container">
 <div class="header-content" style="display:flex; flex-wrap:wrap; align-items:center; gap:1rem;"><h1>tweets recap</h1><p>その日のkind:1を表示します</p></div>
 <div class="input-group">
-<label for="relay" style="display:none;">relay</label><input type="text" id="relay" placeholder="wss://..." style="flex-grow: 1;">
+<!-- リレーの入力欄とサジェスチョンを紐付ける -->
+<label for="relay" style="display:none;">relay</label>
+<input type="text" id="relay" placeholder="wss://..." list="relay-suggestions" style="flex-grow: 1;">
+
+<!-- ここに入力候補（サジェスチョン）のリストを定義します -->
+<datalist id="relay-suggestions">
+    <option value="wss://r.kojira.io/">
+    <option value="wss://yabu.me/">
+    <option value="wss://nostr.compile-error.net/">
+    <option value="wss://relay-jp.nostr.wirednet.jp/">
+    <option value="wss://nos.lol/">
+    <option value="wss://relay.primal.net/">
+</datalist>
 <label for="npub" style="display:none;">pubkey</label><input type="text" id="npub" placeholder="npub1... or NIP-05" style="flex-grow: 1;">
 <label for="date" style="display:none;">date</label><input type="date" id="date"><button onclick="searchPosts()">recap</button><button onclick="createShareLink()">share</button> </div>
 <div id="summary-section">

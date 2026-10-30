@@ -169,17 +169,20 @@ const MyNostrUtils = {
         return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nostr-ref">${url}</a>`;
     },
 
-    // linkify も options を受け取る
+// linkify も options を受け取る
     linkify(text, options = { expandMedia: false }) {
         const combinedRegex = /(https?:\/\/[\w/:%#\$&\?\(\)~\.=\+\-;\*!]+)|(nostr:[a-z0-9]+1[a-z0-9]+)/gi;
 
         return text.replace(combinedRegex, (match) => {
-            if (match.toLowerCase().startsWith("nostr:")) {
-                const nip19 = match.substring(6);
+            // ★ ここでURLの末尾にある不要な改行や制御文字、スペースなどを削除する
+            let cleanUrl = match.trim();
+
+            if (cleanUrl.toLowerCase().startsWith("nostr:")) {
+                const nip19 = cleanUrl.substring(6);
                 return `<a href="https://ompomz.github.io/flowgazer/tweet?id=${nip19}" target="_blank" rel="noreferrer" class="nostr-ref">nostr:${nip19.substring(0, 10)}...</a>`;
             }
-            // parseUrl にオプションを渡す
-            return this.parseUrl(match, options);
+            // parseUrl に綺麗にしたURLを渡す
+            return this.parseUrl(cleanUrl, options);
         });
     },
 

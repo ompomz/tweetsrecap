@@ -114,7 +114,7 @@ const renderPostsAndReactions = (posts, reactions, isInitialDraw) => {
                 author: post.pubkey,
             };
             const nevent = NostrTools.nip19.neventEncode(eventPointer);
-            const customViewerUrl = `/tweetsrecap/tweet?id=${nevent}`;
+            const customViewerUrl = `/flowgazer/tweet?id=${nevent}`;
             postElement.innerHTML = ` <div class="post-line"> <a href="${customViewerUrl}" target="_blank" class="post-time">[${formattedDate}]</a> ${linkifyAndEscapeHtml(post.content)} <span class="reaction-counts"></span> </div> `;
             postList.appendChild(postElement);
             postElements.set(post.id, postElement)
