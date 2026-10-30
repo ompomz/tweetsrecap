@@ -532,18 +532,14 @@
     }
 
     async function formatPostContent(content, tags) {
-      // 1. HTMLエスケープと改行処理
-      // XSS対策をしつつ、改行をブラウザ表示用に変換します
+      // 1. HTMLエスケープ（改行の置換はここではまだやらない！）
       let formattedContent = MyNostrUtils.escapeHtml(content);
-      formattedContent = formattedContent.replace(/\n/g, '<br>');
 
       // 2. URLとNostr IDをまとめてリンク化
-      // 第2引数に { expandMedia: true } を渡すことで、
-      // 画像や動画URLを <img> や <video> タグとして直接展開させます。
+      // （改行がまだ \n のままの安全な状態でリンク化します）
       formattedContent = MyNostrUtils.linkify(formattedContent, { expandMedia: true });
 
       // 3. カスタム絵文字の処理
-      // 既存の replaceCustomEmojis 関数を利用します
       const customEmojis = tags.filter(t => t[0] === 'emoji');
       const customEmojiMap = new Map();
       customEmojis.forEach(([_, shortcode, url]) => {
@@ -555,18 +551,14 @@
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = formattedContent;
 
-      // MyNostrUtils.linkify が生成した .nostr-ref クラスのリンクを全スキャン
       const nostrLinks = tempDiv.querySelectorAll('.nostr-ref');
       const fetchTasks = [];
 
       for (const link of nostrLinks) {
         const text = link.textContent;
-        // テキストが "nostr:n..." で始まっているものをカード化の対象にする
         if (text.startsWith('nostr:')) {
-          // リンクテキストから "nostr:" を除いた純粋な NIP-19 文字列を取得
           const nip19 = text.split(':')[1];
 
-          // カードの生成（非同期）をタスクに追加
           fetchTasks.push((async () => {
             try {
               const cardHtml = await createNostrCard(nip19);
@@ -580,12 +572,16 @@
         }
       }
 
-      // すべての非同期カード取得が終わるまで待機
       if (fetchTasks.length > 0) {
         await Promise.all(fetchTasks);
       }
 
-      return tempDiv.innerHTML;
+      // ★ 5. すべてのリンク化やカード化の処理が「終わったあと」に、
+      // 残っているすべての本物の改行コード（\n）を一括で <br> に変換する！
+      let finalHtml = tempDiv.innerHTML;
+      finalHtml = finalHtml.replace(/\n/g, '<br>');
+
+      return finalHtml;
     }
 
     async function fetchProfiles(pubkeys) {
@@ -1030,7 +1026,8 @@
         function formatAboutContent(content, tags) {
           if (!content) return '';
           let formattedContent = MyNostrUtils.escapeHtml(content);
-          formattedContent = formattedContent.replace(/\n/g, '<br>');
+
+          // 【修正1】ここでは改行を <br> に変えず、そのままにしておく！
 
           const customEmojiMap = new Map();
           tags.filter(t => t[0] === 'emoji').forEach(([_, shortcode, url]) => {
@@ -1043,9 +1040,16 @@
             formattedContent = formattedContent.replace(regex, imageTag);
           });
 
+          // 【修正2】先にURLのリンク化を行う（ここではまだ元の \n 改行が残っている状態）
           formattedContent = formattedContent.replace(/(https?:\/\/[^\s]+)/g, (url) => {
+            // もし先ほどの utility.js の linkify や match.trim() を使うならここで処理したり、
+            // またはそのまま clean する処理を挟んでもOKです
             return url.includes('imgur.com') ? url : `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`;
           });
+
+          // 【修正3】すべてのリンク化や絵文字置換が終わった「最後に」改行を <br> に変換する！
+          formattedContent = formattedContent.replace(/\n/g, '<br>');
+
           return formattedContent;
         }
 
